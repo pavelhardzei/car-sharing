@@ -14,7 +14,6 @@ services:
       - POSTGRES_PASSWORD=postgres
   web:
     build: ./app
-    command: gunicorn car_sharing_project.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - ./app:/code
     ports:
