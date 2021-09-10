@@ -45,6 +45,7 @@ class UserAccount(AbstractBaseUser):
     date_of_birth = models.DateField(blank=True, null=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True)
 
@@ -55,6 +56,12 @@ class UserAccount(AbstractBaseUser):
 
     def get_full_name(self):
         return self.name
+
+    def has_perm(self, perm, obj=None):
+        return self.is_superuser
+
+    def has_module_perms(self, app_label):
+        return self.is_superuser
 
     def __repr__(self):
         return self.email
