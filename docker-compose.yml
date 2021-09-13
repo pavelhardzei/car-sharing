@@ -24,7 +24,7 @@ services:
       - migrations
   migrations:
     image: car_sharing_web
-    entrypoint: bash -c "python manage.py makemigrations && python manage.py migrate"
+    entrypoint: ./entrypoint.sh
     volumes:
       - ./app:/code
     depends_on:
