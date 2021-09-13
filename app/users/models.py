@@ -16,6 +16,7 @@ class CustomUserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
             name=name,
+            date_of_birth=date_of_birth,
             **extra_fields
         )
         user.set_password(password)
