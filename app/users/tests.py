@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.db.utils import IntegrityError
+from django.urls import reverse
 
 
 class UsersManagersTests(TestCase):
@@ -34,3 +35,27 @@ class UsersManagersTests(TestCase):
         with self.assertRaises(ValueError):
             User.objects.create_superuser(email='super2@user.com', name='test', date_of_birth='2000-12-12',
                                           is_superuser=False)
+
+    def test_permissions(self):
+        response = self.client.get(reverse('users'))
+        self.assertEqual(response.status_code, 403)
+
+        User = get_user_model()
+        User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
+        User.objects.create_user(email='normal@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
+
+        self.client.login(email='super@user.com', password='hello_world')
+        response = self.client.get(reverse('users'))
+        self.assertEqual(response.status_code, 200)
+
+        self.client.login(email='normal@user.com', password='hello_world')
+        response = self.client.get(reverse('users'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_signup(self):
+        response = self.client.post(reverse('signup'))
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.post(reverse('signup'), {'email': 'normal@user.com', 'name': 'test',
+                                                        'date_of_birth': '2000-01-01', 'password': 'hello_world'})
+        self.assertEqual(response.status_code, 201)
