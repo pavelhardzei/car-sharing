@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.db.utils import IntegrityError
 from django.urls import reverse
+import json
+from rest_framework.test import APIClient
 
 
 class UsersManagersTests(TestCase):
@@ -38,7 +40,7 @@ class UsersManagersTests(TestCase):
 
     def test_permissions(self):
         response = self.client.get(reverse('users'))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
 
         User = get_user_model()
         superuser = User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
@@ -46,22 +48,29 @@ class UsersManagersTests(TestCase):
         superuser.save()
         user.save()
 
-        self.client.login(email='super@user.com', password='hello_world')
-        response = self.client.get(reverse('users'))
+        response = self.client.post(reverse('get_token'), {'username': 'super@user.com', 'password': 'hello_world'})
+        self.assertEqual(response.status_code, 200)
+        token = json.loads(response.content)['token']
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        response = client.get(reverse('users'))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(reverse('user_detail', kwargs={'pk': superuser.pk}))
+        response = client.get(reverse('user_detail', kwargs={'pk': superuser.pk}))
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(reverse('user_detail', kwargs={'pk': user.pk}))
+        response = client.get(reverse('user_detail', kwargs={'pk': user.pk}))
         self.assertEqual(response.status_code, 200)
 
-        self.client.login(email='normal@user.com', password='hello_world')
-        response = self.client.get(reverse('users'))
+        response = self.client.post(reverse('get_token'), {'username': 'normal@user.com', 'password': 'hello_world'})
+        token = json.loads(response.content)['token']
+        client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        response = client.get(reverse('users'))
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.get(reverse('user_detail', kwargs={'pk': superuser.pk}))
+        response = client.get(reverse('user_detail', kwargs={'pk': superuser.pk}))
         self.assertEqual(response.status_code, 403)
-        response = self.client.get(reverse('user_detail', kwargs={'pk': user.pk}))
+        response = client.get(reverse('user_detail', kwargs={'pk': user.pk}))
         self.assertEqual(response.status_code, 200)
 
     def test_signup(self):
