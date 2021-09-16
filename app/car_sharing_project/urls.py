@@ -23,6 +23,6 @@ urlpatterns = [
     path('', include('base_app.urls')),
     path('', include('users.urls')),
     path('admin/', admin.site.urls),
-    path('auth/', obtain_auth_token),
+    path('auth/', obtain_auth_token, name='get_token'),
     path('api-auth/', include('rest_framework.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
