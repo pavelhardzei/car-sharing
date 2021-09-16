@@ -41,16 +41,28 @@ class UsersManagersTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
         User = get_user_model()
-        User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
-        User.objects.create_user(email='normal@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
+        superuser = User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
+        user = User.objects.create_user(email='normal@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
+        superuser.save()
+        user.save()
 
         self.client.login(email='super@user.com', password='hello_world')
         response = self.client.get(reverse('users'))
         self.assertEqual(response.status_code, 200)
 
+        response = self.client.get(reverse('user_detail', kwargs={'pk': superuser.pk}))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse('user_detail', kwargs={'pk': user.pk}))
+        self.assertEqual(response.status_code, 200)
+
         self.client.login(email='normal@user.com', password='hello_world')
         response = self.client.get(reverse('users'))
         self.assertEqual(response.status_code, 403)
+
+        response = self.client.get(reverse('user_detail', kwargs={'pk': superuser.pk}))
+        self.assertEqual(response.status_code, 403)
+        response = self.client.get(reverse('user_detail', kwargs={'pk': user.pk}))
+        self.assertEqual(response.status_code, 200)
 
     def test_signup(self):
         response = self.client.post(reverse('signup'))
