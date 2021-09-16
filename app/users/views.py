@@ -13,10 +13,10 @@ class UserRegister(generics.CreateAPIView):
 class UserList(generics.ListAPIView):
     queryset = UserAccount.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = (permissions.IsAdminUser, )
 
 
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = UserAccount.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdminOrOwner]
+    permission_classes = (IsAdminOrOwner, )
