@@ -38,7 +38,7 @@ class CustomUserManager(BaseUserManager):
 class UserAccount(AbstractBaseUser):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=150)
-    date_of_birth = models.DateField(blank=True, null=True)
+    date_of_birth = models.DateField()
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
