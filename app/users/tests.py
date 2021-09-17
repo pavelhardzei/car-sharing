@@ -35,7 +35,7 @@ class UsersManagersTests(TestCase):
         self.assertTrue(admin_user.is_superuser)
 
         with self.assertRaises(ValueError):
-            User.objects.create_superuser(email='super2@user.com', name='test', date_of_birth='2000-12-12',
+            User.objects.create_superuser(email='super2@user.com', name='test2', date_of_birth='2000-12-12',
                                           is_superuser=False)
 
     def test_permissions(self):
@@ -44,11 +44,11 @@ class UsersManagersTests(TestCase):
 
         User = get_user_model()
         superuser = User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
-        user = User.objects.create_user(email='normal@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
+        user = User.objects.create_user(email='normal@user.com', name='test1', date_of_birth='2002-12-12', password='hello_world')
         superuser.save()
         user.save()
 
-        response = self.client.post(reverse('get_token'), {'username': 'super@user.com', 'password': 'hello_world'})
+        response = self.client.post(reverse('get_token'), {'email_or_username': 'test', 'password': 'hello_world'})
         self.assertEqual(response.status_code, 200)
         token = json.loads(response.content)['token']
 
@@ -62,7 +62,7 @@ class UsersManagersTests(TestCase):
         response = client.get(reverse('user_detail', kwargs={'pk': user.pk}))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post(reverse('get_token'), {'username': 'normal@user.com', 'password': 'hello_world'})
+        response = self.client.post(reverse('get_token'), {'email_or_username': 'normal@user.com', 'password': 'hello_world'})
         token = json.loads(response.content)['token']
         client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
         response = client.get(reverse('users'))
