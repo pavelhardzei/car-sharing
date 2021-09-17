@@ -1,9 +1,7 @@
-from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, exceptions
 from rest_framework.authtoken.views import Token
 from .models import UserAccount
-from abc import ABC
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -36,6 +34,8 @@ class TokenSerializer(serializers.Serializer):
 
         if email_or_username and password:
             if '@' in email_or_username:
+                if email_or_username.count('@') != 1:
+                    raise exceptions.ValidationError('Invalid value')
                 user = get_object_or_404(UserAccount, email=email_or_username)
             else:
                 user = get_object_or_404(UserAccount, name=email_or_username)
