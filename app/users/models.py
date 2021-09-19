@@ -21,7 +21,7 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, email, name, date_of_birth, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
-        return self._create_user(email, name, password, date_of_birth, **extra_fields)
+        return self._create_user(email, name, date_of_birth, password, **extra_fields)
 
     def create_superuser(self, email, name, date_of_birth, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
@@ -48,11 +48,11 @@ class UserAccount(AbstractBaseUser):
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'date_of_birth']
+    REQUIRED_FIELDS = ('name', 'date_of_birth')
 
     def save(self, *args, **kwargs):
         values = [self.email, self.name, self.date_of_birth]
-        field_value_map = dict(zip([self.USERNAME_FIELD] + self.REQUIRED_FIELDS, values))
+        field_value_map = dict(zip((self.USERNAME_FIELD, ) + self.REQUIRED_FIELDS, values))
         for field_name, value in field_value_map.items():
             if not value:
                 raise ValueError(f'The {field_name} value must be set')
