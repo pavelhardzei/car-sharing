@@ -51,7 +51,7 @@ class UserAccount(AbstractBaseUser):
     REQUIRED_FIELDS = ('name', 'date_of_birth')
 
     def save(self, *args, **kwargs):
-        values = [self.email, self.name, self.date_of_birth]
+        values = (self.email, self.name, self.date_of_birth)
         field_value_map = dict(zip((self.USERNAME_FIELD, ) + self.REQUIRED_FIELDS, values))
         for field_name, value in field_value_map.items():
             if not value:
