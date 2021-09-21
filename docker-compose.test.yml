@@ -1,22 +1,18 @@
-version: "3.9"
+version: "2"
 
 volumes:
   postgres_data:
 
 services:
   db:
-    image: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+    extends:
+      file: docker-compose.yml
+      service: db
   web:
-    build: ./app
+    extends:
+      file: docker-compose.yml
+      service: web
     entrypoint: bash -c "sleep 5 && python manage.py test users > stdout.txt 2> stderr.txt"
-    volumes:
-      - ./app:/code
     ports:
       - "8000:8000"
     depends_on:
