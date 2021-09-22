@@ -41,7 +41,7 @@ class UsersManagersTests(TestCase):
 
     def test_permissions(self):
         response = self.client.get(reverse('users'))
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         User = get_user_model()
         superuser = User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
