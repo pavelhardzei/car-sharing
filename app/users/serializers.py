@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate#, update_session_auth_hash
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, exceptions
 from rest_framework.authtoken.views import Token
@@ -23,6 +24,17 @@ class UserSerializer(serializers.ModelSerializer):
         Token.objects.create(user=user)
         return user
 
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get('email', instance.email)
+        instance.name = validated_data.get('name', instance.name)
+        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
+
+        password = validated_data.get('password', None)
+        instance.set_password(password)
+        instance.save()
+
+        return instance
+
 
 class TokenSerializer(serializers.Serializer):
     email_or_username = serializers.CharField()
@@ -39,6 +51,8 @@ class TokenSerializer(serializers.Serializer):
                 user = get_object_or_404(UserAccount, email=email_or_username)
             else:
                 user = get_object_or_404(UserAccount, name=email_or_username)
+
+            user = authenticate(email=user.email, password=password)
 
             if user:
                 if not user.is_active:
