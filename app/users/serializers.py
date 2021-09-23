@@ -25,15 +25,12 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        instance.email = validated_data.get('email', instance.email)
-        instance.name = validated_data.get('name', instance.name)
-        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
-
-        password = validated_data.get('password', None)
-        instance.set_password(password)
-        instance.save()
-
-        return instance
+        password = validated_data.pop('password')
+        user = super(UserSerializer, self).update(instance, validated_data)
+        if password:
+            user.set_password(password)
+        user.save()
+        return user
 
 
 class TokenSerializer(serializers.Serializer):
