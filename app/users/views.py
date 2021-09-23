@@ -27,6 +27,26 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAdminOrOwner, )
     authentication_classes = (TokenAuthentication, )
 
+    def get(self, request, *args, **kwargs):
+        if self.kwargs['pk'] == 'me':
+            self.kwargs['pk'] = request.user.pk
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        if self.kwargs['pk'] == 'me':
+            self.kwargs['pk'] = request.user.pk
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        if self.kwargs['pk'] == 'me':
+            self.kwargs['pk'] = request.user.pk
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        if self.kwargs['pk'] == 'me':
+            self.kwargs['pk'] = request.user.pk
+        return self.destroy(request, *args, **kwargs)
+
 
 class AuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
@@ -38,5 +58,6 @@ class AuthToken(ObtainAuthToken):
         return Response({
             'token': token.key,
             'user_id': user.pk,
-            'email': user.email
+            'email': user.email,
+            'name': user.name
         })
