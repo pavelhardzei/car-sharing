@@ -1,4 +1,4 @@
-from django.contrib.auth import authenticate#, update_session_auth_hash
+from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, exceptions
 from rest_framework.authtoken.views import Token
