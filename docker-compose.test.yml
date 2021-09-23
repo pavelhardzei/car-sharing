@@ -1,0 +1,19 @@
+version: "2"
+
+volumes:
+  postgres_data:
+
+services:
+  db:
+    extends:
+      file: docker-compose.yml
+      service: db
+  web:
+    extends:
+      file: docker-compose.yml
+      service: web
+    entrypoint: bash -c "sleep 5 && python manage.py test users > stdout.txt 2> stderr.txt"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db

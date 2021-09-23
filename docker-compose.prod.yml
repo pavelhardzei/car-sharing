@@ -1,0 +1,33 @@
+version: "2"
+
+volumes:
+  postgres_data:
+
+services:
+  db:
+    extends:
+      file: docker-compose.yml
+      service: db
+  web:
+    extends:
+      file: docker-compose.yml
+      service: web
+    entrypoint: gunicorn car_sharing_project.wsgi:application --bind 0.0.0.0:8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - migrations
+  migrations:
+    extends:
+      file: docker-compose.yml
+      service: web
+    entrypoint: ./entrypoint.sh
+    depends_on:
+      - db
+  nginx:
+    build: ./nginx
+    ports:
+      - "1337:80"
+    depends_on:
+      - web

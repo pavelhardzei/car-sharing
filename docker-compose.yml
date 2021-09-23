@@ -14,25 +14,5 @@ services:
       - POSTGRES_PASSWORD=postgres
   web:
     build: ./app
-    image: car_sharing_web
     volumes:
       - ./app:/code
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-      - migrations
-  migrations:
-    image: car_sharing_web
-    entrypoint: ./entrypoint.sh
-    volumes:
-      - ./app:/code
-    depends_on:
-      - db
-  nginx:
-    build: ./nginx
-    image: car_sharing_nginx
-    ports:
-      - "1337:80"
-    depends_on:
-      - web
