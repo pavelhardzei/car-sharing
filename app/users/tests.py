@@ -49,7 +49,10 @@ class UsersManagersTests(TestCase):
         superuser.save()
         user.save()
 
-        response = self.client.post(reverse('get_token'), {'email_or_username': 'test', 'password': 'hello_world'})
+        response = self.client.post(reverse('get_token'), {'name': 'test', 'password': '1'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response = self.client.post(reverse('get_token'), {'name': 'test', 'password': 'hello_world'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         token = json.loads(response.content)['token']
 
@@ -63,7 +66,7 @@ class UsersManagersTests(TestCase):
         response = client.get(reverse('user_detail', kwargs={'pk': user.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self.client.post(reverse('get_token'), {'email_or_username': 'normal@user.com', 'password': 'hello_world'})
+        response = self.client.post(reverse('get_token'), {'email': 'normal@user.com', 'password': 'hello_world'})
         token = json.loads(response.content)['token']
         client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
         response = client.get(reverse('users'))
@@ -71,7 +74,7 @@ class UsersManagersTests(TestCase):
 
         response = client.get(reverse('user_detail', kwargs={'pk': superuser.pk}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = client.get(reverse('user_detail', kwargs={'pk': user.pk}))
+        response = client.get(reverse('user_detail', kwargs={'pk': 'me'}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_signup(self):
@@ -81,3 +84,45 @@ class UsersManagersTests(TestCase):
         response = self.client.post(reverse('signup'), {'email': 'normal@user.com', 'name': 'test',
                                                         'date_of_birth': '2000-01-01', 'password': 'hello_world'})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_put(self):
+        User = get_user_model()
+        superuser = User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12',
+                                                  password='hello_world')
+        user = User.objects.create_user(email='normal@user.com', name='test1', date_of_birth='2002-12-12',
+                                        password='hello_world')
+        superuser.save()
+        user.save()
+
+        response = self.client.post(reverse('get_token'), {'name': 'test', 'password': 'hello_world'})
+        token = json.loads(response.content)['token']
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+
+        response = client.put(reverse('user_detail', kwargs={'pk': user.pk}), data={'email': 'changed@user.com', 'name': 'changed',
+                                                                                    'date_of_birth': '1990-10-10', 'password': 'testing321'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user = User.objects.get(pk=user.pk)
+        self.assertEqual(user.email, 'changed@user.com')
+        self.assertEqual(user.name, 'changed')
+        self.assertEqual(user.date_of_birth.strftime('%Y-%m-%d'), '1990-10-10')
+
+    def test_delete(self):
+        User = get_user_model()
+        superuser = User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12',
+                                                  password='hello_world')
+        user = User.objects.create_user(email='normal@user.com', name='test1', date_of_birth='2002-12-12',
+                                        password='hello_world')
+        superuser.save()
+        user.save()
+
+        response = self.client.post(reverse('get_token'), {'name': 'test', 'password': 'hello_world'})
+        token = json.loads(response.content)['token']
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+
+        response = client.delete(reverse('user_detail', kwargs={'pk': 'me'}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
