@@ -34,30 +34,29 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.Serializer):
-    email_or_username = serializers.CharField()
+    email = serializers.EmailField(required=False)
+    name = serializers.CharField(required=False)
     password = serializers.CharField()
 
     def validate(self, attrs):
-        email_or_username = attrs.get('email_or_username')
+        email = attrs.get('email')
+        name = attrs.get('name')
         password = attrs.get('password')
 
-        if email_or_username and password:
-            if '@' in email_or_username:
-                if email_or_username.count('@') != 1:
-                    raise exceptions.ValidationError('Invalid value')
-                user = get_object_or_404(UserAccount, email=email_or_username)
-            else:
-                user = get_object_or_404(UserAccount, name=email_or_username)
+        if email and name or not password or not email and not name:
+            raise exceptions.ValidationError('Must include email + pwd or name + pwd')
 
-            user = authenticate(email=user.email, password=password)
-
-            if user:
-                if not user.is_active:
-                    raise exceptions.ValidationError('User account is disabled.')
-            else:
-                raise exceptions.ValidationError('Unable to log in with provided credentials.')
+        if email:
+            user = get_object_or_404(UserAccount, email=email)
         else:
-            raise exceptions.ValidationError('Must include "email or username" and "password"')
+            user = get_object_or_404(UserAccount, name=name)
+
+        user = authenticate(email=user.email, password=password)
+        if user:
+            if not user.is_active:
+                raise exceptions.ValidationError('User account is disabled.')
+        else:
+            raise exceptions.ValidationError('Unable to log in with provided credentials.')
 
         attrs['user'] = user
         return attrs
