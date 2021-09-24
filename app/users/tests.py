@@ -78,11 +78,11 @@ class UsersManagersTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_signup(self):
-        response = self.client.post(reverse('signup'))
+        response = self.client.post(reverse('users'))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        response = self.client.post(reverse('signup'), {'email': 'normal@user.com', 'name': 'test',
-                                                        'date_of_birth': '2000-01-01', 'password': 'hello_world'})
+        response = self.client.post(reverse('users'), {'email': 'normal@user.com', 'name': 'test',
+                                                       'date_of_birth': '2000-01-01', 'password': 'hello_world'})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_put(self):

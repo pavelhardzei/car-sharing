@@ -9,16 +9,17 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
 
-class UserRegister(generics.CreateAPIView):
+class UserList(generics.ListCreateAPIView):
     queryset = UserAccount.objects.all()
     serializer_class = UserSerializer
-
-
-class UserList(generics.ListAPIView):
-    queryset = UserAccount.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes_by_action = {'GET': (permissions.IsAdminUser, )}
     authentication_classes = (TokenAuthentication, )
+
+    def get_permissions(self):
+        if self.request.method in self.permission_classes_by_action:
+            return tuple([permission() for permission in self.permission_classes_by_action[self.request.method]])
+        else:
+            return tuple()
 
 
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
