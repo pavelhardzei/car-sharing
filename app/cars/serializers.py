@@ -18,3 +18,9 @@ class CarInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarInfo
         fields = ('car_id', 'longitude', 'latitude', 'petrol_level', 'status')
+
+        extra_kwargs = {
+            'car_id': {
+                'required': False,
+            }
+        }
