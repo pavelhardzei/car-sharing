@@ -3,7 +3,6 @@ from .serializers import UserSerializer, TokenSerializer
 from rest_framework import generics
 from rest_framework import permissions
 from .permissions import IsAdminOrOwner
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -13,7 +12,6 @@ class UserList(generics.ListCreateAPIView):
     queryset = UserAccount.objects.all()
     serializer_class = UserSerializer
     permission_classes_by_action = {'GET': (permissions.IsAdminUser, )}
-    authentication_classes = (TokenAuthentication, )
 
     def get_permissions(self):
         if self.request.method in self.permission_classes_by_action:
@@ -26,7 +24,6 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = UserAccount.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdminOrOwner, )
-    authentication_classes = (TokenAuthentication, )
 
     def get(self, request, *args, **kwargs):
         if self.kwargs['pk'] == 'me':
