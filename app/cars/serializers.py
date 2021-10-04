@@ -11,10 +11,10 @@ class CategorySerializer(serializers.ModelSerializer):
 class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = ('id', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category_id')
+        fields = ('id', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category')
 
 
 class CarInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarInfo
-        fields = ('car_id', 'longitude', 'latitude', 'petrol_level', 'status')
+        fields = ('car', 'longitude', 'latitude', 'petrol_level', 'status')
