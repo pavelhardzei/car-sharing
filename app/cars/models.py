@@ -19,18 +19,18 @@ class Car(models.Model):
     year = models.IntegerField()
     weight = models.IntegerField()
     mileage = models.IntegerField()
-    category_id = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category')
 
     def __str__(self):
         return self.register_number
 
 
 class CarInfo(models.Model):
-    car_id = models.OneToOneField(Car, on_delete=models.CASCADE, primary_key=True)
+    car = models.OneToOneField(Car, on_delete=models.CASCADE, primary_key=True, related_name='car')
     longitude = models.DecimalField(max_digits=11, decimal_places=8)
     latitude = models.DecimalField(max_digits=10, decimal_places=8)
     petrol_level = models.IntegerField()
     status = models.CharField(max_length=50)
 
     def __str__(self):
-        return str(self.car_id)
+        return str(self.car)
