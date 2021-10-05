@@ -1,12 +1,12 @@
 up:
-	docker-compose up -d
+	docker-compose -f docker-compose.prod.yml up -d
 down:
-	docker-compose down
+	docker-compose -f docker-compose.prod.yml down
 build:
-	docker-compose build
+	docker-compose -f docker-compose.prod.yml build
 web:
-	docker-compose exec web bash
+	docker-compose -f docker-compose.prod.yml exec web bash
 db:
-	docker-compose exec db psql --username=postgres --dbname=postgres
+	docker-compose -f docker-compose.prod.yml exec db psql --username=postgres --dbname=postgres
 test:   
 	docker-compose -f docker-compose.test.yml up --abort-on-container-exit
