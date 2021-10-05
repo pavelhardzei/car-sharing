@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'base_app',
     'users',
-    'cars'
+    'cars',
+    'trips'
 ]
 
 MIDDLEWARE = [
