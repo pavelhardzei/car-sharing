@@ -5,13 +5,13 @@ from .models import Category, Car, CarInfo
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ('id', 'name', 'day_fare', 'evening_fare', 'parking_price', 'reservation_price')
+        fields = '__all__'
 
 
 class CarInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarInfo
-        fields = ('car', 'longitude', 'latitude', 'petrol_level', 'status')
+        fields = '__all__'
 
 
 class CarSerializer(serializers.ModelSerializer):
@@ -19,4 +19,4 @@ class CarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Car
-        fields = ('id', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category', 'car')
+        fields = '__all__'
