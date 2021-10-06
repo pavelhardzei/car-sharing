@@ -11,7 +11,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class CarViewSet(viewsets.ModelViewSet):
-    queryset = Car.objects.all()
+    queryset = Car.objects.select_related('car_info').all()
     serializer_class = CarSerializer
     permission_classes = (permissions.IsAdminUser, )
 
