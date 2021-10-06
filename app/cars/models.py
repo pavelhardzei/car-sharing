@@ -16,7 +16,7 @@ class Car(models.Model):
     brand = models.CharField(max_length=50)
     register_number = models.CharField(max_length=8, unique=True)
     color = models.CharField(max_length=30)
-    year = models.IntegerField()
+    year = models.IntegerField(editable=False)
     weight = models.IntegerField()
     mileage = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category')
