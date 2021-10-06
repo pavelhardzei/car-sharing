@@ -26,7 +26,7 @@ class Car(models.Model):
 
 
 class CarInfo(models.Model):
-    car = models.OneToOneField(Car, on_delete=models.CASCADE, primary_key=True, related_name='car')
+    car = models.OneToOneField(Car, on_delete=models.CASCADE, primary_key=True, related_name='car_info')
     longitude = models.DecimalField(max_digits=11, decimal_places=8)
     latitude = models.DecimalField(max_digits=10, decimal_places=8)
     petrol_level = models.IntegerField()
