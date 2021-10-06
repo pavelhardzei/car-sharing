@@ -9,6 +9,18 @@ class Category(models.Model):
     parking_price = models.FloatField()
     reservation_price = models.FloatField()
 
+    def clean(self):
+        if self.day_fare <= 0 or self.evening_fare <= 0:
+            raise Exception('Fare must be positive')
+        if self.reservation_price <= 0:
+            raise Exception('Reservation price must be positive')
+        if self.parking_price < 0:
+            raise Exception('Parking price cannot be negative')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
