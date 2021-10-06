@@ -1,4 +1,5 @@
 from django.db import models
+import datetime
 
 
 class Category(models.Model):
@@ -16,12 +17,14 @@ class Car(models.Model):
     brand = models.CharField(max_length=50)
     register_number = models.CharField(max_length=8, unique=True)
     color = models.CharField(max_length=30)
-    year = models.IntegerField(editable=False)
+    year = models.IntegerField()
     weight = models.IntegerField()
     mileage = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category')
 
     def clean(self):
+        if self.year < 1886 or self.year > datetime.date.today().year:
+            raise Exception('Invalid creation year')
         if self.weight <= 0:
             raise Exception('Weight must be positive')
         if self.mileage < 0:
