@@ -7,11 +7,23 @@ class TripStateSerializer(serializers.ModelSerializer):
         model = TripState
         fields = '__all__'
 
+        extra_kwargs = {
+            'trip': {
+                'write_only': True
+            }
+        }
+
 
 class TripEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = TripEvent
         fields = '__all__'
+
+        extra_kwargs = {
+            'trip': {
+                'write_only': True
+            }
+        }
 
 
 class TripSerializer(serializers.ModelSerializer):
