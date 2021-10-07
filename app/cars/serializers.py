@@ -26,3 +26,10 @@ class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
         fields = ('id', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category', 'car_info')
+
+    def get_fields(self, *args, **kwargs):
+        fields = super().get_fields()
+        request = self.context.get('request', None)
+        if request and (request.method == 'PUT' or request.method == 'PATCH'):
+            fields['year'].read_only = True
+        return fields
