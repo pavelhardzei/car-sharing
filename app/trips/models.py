@@ -32,8 +32,12 @@ class Trip(models.Model):
 
 
 class TripState(models.Model):
+    class Rate(models.TextChoices):
+        day = ('day', 'DAY')
+        evening = ('evening', 'EVENING')
+
     trip = models.OneToOneField(Trip, on_delete=models.CASCADE, primary_key=True, related_name='state')
-    current_rate = models.CharField(max_length=50)
+    current_rate = models.CharField(max_length=50, choices=Rate.choices)
     fare = models.FloatField(blank=True, null=True, default=None)
     parking_price = models.FloatField(blank=True, null=True, default=None)
     reservation_price = models.FloatField(blank=True, null=True, default=None)
@@ -55,8 +59,16 @@ class TripState(models.Model):
 
 
 class TripEvent(models.Model):
+    class Event(models.TextChoices):
+        start = ('start', 'START')
+        end = ('end', 'END')
+        parking = ('parking', 'PARKING')
+        fueling = ('fueling', 'FUELING')
+        washing = ('washing', 'WASHING')
+        driving = ('driving', 'DRIVING')
+
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='events')
-    event = models.CharField(max_length=50)
+    event = models.CharField(max_length=50, choices=Event.choices)
     timestamp = models.DateTimeField(default=timezone.now)
     credentials = models.CharField(max_length=50, blank=True, null=True, default=None)
     cost = models.FloatField(blank=True, null=True, default=None)
