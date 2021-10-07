@@ -11,7 +11,13 @@ class CategorySerializer(serializers.ModelSerializer):
 class CarInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarInfo
-        fields = ('longitude', 'latitude', 'petrol_level', 'status')
+        fields = ('car', 'longitude', 'latitude', 'petrol_level', 'status')
+
+        extra_kwargs = {
+            'car': {
+                'write_only': True
+            }
+        }
 
 
 class CarSerializer(serializers.ModelSerializer):
