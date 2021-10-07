@@ -5,7 +5,7 @@ from .serializers import TripSerializer, TripStateSerializer, TripEventSerialize
 
 
 class TripViewSet(viewsets.ModelViewSet):
-    queryset = Trip.objects.all()
+    queryset = Trip.objects.select_related('state').prefetch_related('events').all()
     serializer_class = TripSerializer
     permission_classes = (permissions.IsAdminUser, )
 
