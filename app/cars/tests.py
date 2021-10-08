@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
-from .models import Category, Car, CarInfo
+from .models import Car, Category
 from django.test import TestCase, RequestFactory
 from django.urls import reverse
-from rest_framework import permissions
+from rest_framework import permissions, status
+from rest_framework.test import APIClient
+import json
 
 
 class UsersManagersTests(TestCase):
@@ -12,42 +14,60 @@ class UsersManagersTests(TestCase):
         self.superuser = self.User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12', password='hello_world')
         self.normaluser = self.User.objects.create_user(email='normal@user.com', name='test1', date_of_birth='2002-12-12', password='hello_world')
 
+        self.test_category = Category.objects.create(name='Economy', day_fare=6, evening_fare=8, parking_price=2, reservation_price=3)
+        self.test_car = Car.objects.create(brand='BMW', register_number='1111KK-1', color=Car.Color.blue,
+                                           year=2020, weight=600, mileage=1000, category=self.test_category)
+
         self.factory = RequestFactory()
+        self.api_client = APIClient()
+        response = self.client.post(reverse('get_token'), {'name': 'test', 'password': 'hello_world'})
+        token = json.loads(response.content)['token']
+        self.api_client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
 
     def test_create_car(self):
-        with self.assertRaises(Exception):
-            Category.objects.create(name='Economy', day_fare=-1, evening_fare=8, parking_price=2, reservation_price=3)
-        with self.assertRaises(Exception):
-            Category.objects.create(name='Economy', day_fare=6, evening_fare=8, parking_price=-2, reservation_price=3)
-        with self.assertRaises(Exception):
-            Category.objects.create(name='Economy', day_fare=-1, evening_fare=8, parking_price=2, reservation_price=0)
+        response = self.api_client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 10,
+                                        'evening_fare': 15, 'parking_price': 2, 'reservation_price': 3})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.api_client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+                                        'color': 'brawn', 'year': 2018, 'weight': 900, 'mileage': 2000, 'category': self.test_category.id})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.api_client.post(reverse('carinfo-list'), {'car': self.test_car.id, 'longitude': '30.234566',
+                                        'latitude': '33.223456', 'petrol_level': 50, 'status': 'broken'})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        cat1 = Category.objects.create(name='Economy', day_fare=6, evening_fare=8, parking_price=2, reservation_price=3)
+    def test_create_car_with_invalid_fields(self):
+        response = self.api_client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 0,
+                                        'evening_fare': 15, 'parking_price': 2, 'reservation_price': 3})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.api_client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 3,
+                                        'evening_fare': 15, 'parking_price': -2, 'reservation_price': 3})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        with self.assertRaises(Exception):
-            Car.objects.create(brand='Mercedes', register_number='1111KK-1', color='purple', year=2020, weight=600, mileage=1000, category=cat1)
-        with self.assertRaises(Exception):
-            Car.objects.create(brand='Mercedes', register_number='1111KK-1', color=Car.Color.blue, year=3020, weight=600, mileage=1000, category=cat1)
-        with self.assertRaises(Exception):
-            Car.objects.create(brand='Mercedes', register_number='1111KK-1', color=Car.Color.blue, year=2020, weight=-600, mileage=1000, category=cat1)
-        with self.assertRaises(Exception):
-            Car.objects.create(brand='Mercedes', register_number='1111KK-1', color=Car.Color.blue, year=2020, weight=600, mileage=-1000, category=cat1)
+        response = self.api_client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+                                        'color': 'brawn', 'year': 2018, 'weight': 900, 'mileage': 2000, 'category': 100})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.api_client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+                                        'color': 'brawn', 'year': 2300, 'weight': 900, 'mileage': 2000, 'category': self.test_category.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        car1 = Car.objects.create(brand='Mercedes', register_number='1111KK-1', color=Car.Color.blue, year=2020, weight=600, mileage=1000, category=cat1)
+        response = self.api_client.post(reverse('carinfo-list'), {'car': 100, 'longitude': '30.234566',
+                                        'latitude': '33.223456', 'petrol_level': 50, 'status': 'broken'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.api_client.post(reverse('carinfo-list'), {'car': self.test_car.id, 'longitude': '30.234566',
+                                        'latitude': '33.223456', 'petrol_level': 50, 'status': 'running'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        with self.assertRaises(Exception):
-            CarInfo.objects.create(car=car1, longitude='290.345612', latitude='34.124533', petrol_level=90, status=CarInfo.Status.available)
-        with self.assertRaises(Exception):
-            CarInfo.objects.create(car=car1, longitude='20.345612', latitude='95.124533', petrol_level=90, status=CarInfo.Status.available)
-        with self.assertRaises(Exception):
-            CarInfo.objects.create(car=car1, longitude='20.345612', latitude='34.124533', petrol_level=-90, status=CarInfo.Status.available)
-        with self.assertRaises(Exception):
-            CarInfo.objects.create(car=car1, longitude='20.345612', latitude='34.124533', petrol_level=90, status='free')
+    def test_change_year(self):
+        year_change_to = 2000
+        current_year = self.test_car.year
+        response = self.api_client.patch(reverse('car-detail', kwargs={'pk': self.test_car.id}), {'year': year_change_to})
+        self.assertNotEqual(json.loads(response.content)['year'], year_change_to)
+        self.assertEqual(json.loads(response.content)['year'], current_year)
 
-        CarInfo.objects.create(car=car1, longitude='33.345612', latitude='34.124533', petrol_level=90, status=CarInfo.Status.available)
-
-        with self.assertRaises(Exception):
-            CarInfo.objects.create(car=car1, longitude='33.345612', latitude='34.124533', petrol_level=90, status=CarInfo.Status.available)
+    def test_delete_car(self):
+        response = self.api_client.delete(reverse('car-detail', kwargs={'pk': self.test_car.id}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(Car.objects.all()), 0)
 
     def test_permission(self):
         self.permission = permissions.IsAdminUser()
