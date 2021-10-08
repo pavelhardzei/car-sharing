@@ -55,7 +55,7 @@ class TripState(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.trip
+        return str(self.trip)
 
 
 class TripEvent(models.Model):
