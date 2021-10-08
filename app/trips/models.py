@@ -73,6 +73,9 @@ class TripEvent(models.Model):
     credentials = models.CharField(max_length=50, blank=True, null=True, default=None)
     cost = models.FloatField(blank=True, null=True, default=None)
 
+    class Meta:
+        ordering = ['id']
+
     def clean(self):
         if self.cost and self.cost <= 0:
             raise Exception('Cost must be positive')
