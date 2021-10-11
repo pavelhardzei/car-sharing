@@ -3,11 +3,12 @@ from .models import Car, Category
 from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from rest_framework import permissions, status
-from rest_framework.test import APIClient
 import json
+from unittest.mock import patch
 
 
-class UsersManagersTests(TestCase):
+@patch('rest_framework.views.APIView.check_permissions', lambda *args, **kwargs: True)
+class CarsTests(TestCase):
 
     def setUp(self):
         self.User = get_user_model()
@@ -19,51 +20,50 @@ class UsersManagersTests(TestCase):
                                            year=2020, weight=600, mileage=1000, category=self.test_category)
 
         self.factory = RequestFactory()
-        self.api_client = APIClient()
-        self.api_client.force_authenticate(user=self.superuser)
 
     def test_create_car(self):
-        response = self.api_client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 10,
-                                        'evening_fare': 15, 'parking_price': 2, 'reservation_price': 3})
+        response = self.client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 10,
+                                    'evening_fare': 15, 'parking_price': 2, 'reservation_price': 3})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.api_client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
-                                        'color': 'brawn', 'year': 2018, 'weight': 900, 'mileage': 2000, 'category': self.test_category.id})
+        response = self.client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+                                    'color': 'brawn', 'year': 2018, 'weight': 900, 'mileage': 2000, 'category': self.test_category.id})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.api_client.post(reverse('carinfo-list'), {'car': self.test_car.id, 'longitude': '30.234566',
+        response = self.client.post(reverse('carinfo-list'), {'car': self.test_car.id, 'longitude': '30.234566',
                                         'latitude': '33.223456', 'petrol_level': 50, 'status': 'broken'})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_car_with_invalid_fields(self):
-        response = self.api_client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 0,
+        response = self.client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 0,
                                         'evening_fare': 15, 'parking_price': 2, 'reservation_price': 3})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        response = self.api_client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 3,
+        response = self.client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 3,
                                         'evening_fare': 15, 'parking_price': -2, 'reservation_price': 3})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        response = self.api_client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+        response = self.client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
                                         'color': 'brawn', 'year': 2018, 'weight': 900, 'mileage': 2000, 'category': 100})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        response = self.api_client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+        response = self.client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
                                         'color': 'brawn', 'year': 2300, 'weight': 900, 'mileage': 2000, 'category': self.test_category.id})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        response = self.api_client.post(reverse('carinfo-list'), {'car': 100, 'longitude': '30.234566',
+        response = self.client.post(reverse('carinfo-list'), {'car': 100, 'longitude': '30.234566',
                                         'latitude': '33.223456', 'petrol_level': 50, 'status': 'broken'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        response = self.api_client.post(reverse('carinfo-list'), {'car': self.test_car.id, 'longitude': '30.234566',
+        response = self.client.post(reverse('carinfo-list'), {'car': self.test_car.id, 'longitude': '30.234566',
                                         'latitude': '33.223456', 'petrol_level': 50, 'status': 'running'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_change_year(self):
         year_change_to = 2000
         current_year = self.test_car.year
-        response = self.api_client.patch(reverse('car-detail', kwargs={'pk': self.test_car.id}), {'year': year_change_to})
+        response = self.client.patch(reverse('car-detail', kwargs={'pk': self.test_car.id}), {'year': year_change_to},
+                                     content_type='application/json')
         self.assertNotEqual(json.loads(response.content)['year'], year_change_to)
         self.assertEqual(json.loads(response.content)['year'], current_year)
 
     def test_delete_car(self):
-        response = self.api_client.delete(reverse('car-detail', kwargs={'pk': self.test_car.id}))
+        response = self.client.delete(reverse('car-detail', kwargs={'pk': self.test_car.id}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(Car.objects.all()), 0)
 
