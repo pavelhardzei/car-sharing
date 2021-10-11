@@ -20,9 +20,7 @@ class UsersManagersTests(TestCase):
 
         self.factory = RequestFactory()
         self.api_client = APIClient()
-        response = self.client.post(reverse('get_token'), {'name': 'test', 'password': 'hello_world'})
-        token = json.loads(response.content)['token']
-        self.api_client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        self.api_client.force_authenticate(user=self.superuser)
 
     def test_create_car(self):
         response = self.api_client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 10,
