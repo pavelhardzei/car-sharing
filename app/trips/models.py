@@ -13,20 +13,6 @@ class Trip(models.Model):
     total_distance = models.IntegerField(blank=True, null=True, default=None)
     reservation_time = models.IntegerField(blank=True, null=True, default=None)
 
-    def clean(self):
-        if self.total_cost and self.total_cost <= 0:
-            raise Exception('Cost must be positive')
-        if self.end_date and self.end_date <= self.start_date:
-            raise Exception('Invalid dates')
-        if self.total_distance and self.total_distance <= 0:
-            raise Exception('Distance must be positive')
-        if self.reservation_time and self.reservation_time <= 0:
-            raise Exception('Reservation time must be positive')
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
-
     def __str__(self):
         return f'id:{self.id}, car:{self.car}, user:{self.user}'
 
@@ -41,18 +27,6 @@ class TripState(models.Model):
     fare = models.FloatField(blank=True, null=True, default=None)
     parking_price = models.FloatField(blank=True, null=True, default=None)
     reservation_price = models.FloatField(blank=True, null=True, default=None)
-
-    def clean(self):
-        if self.fare and self.fare <= 0:
-            raise Exception('Fare must be positive')
-        if self.parking_price and self.parking_price < 0:
-            raise Exception('Parking price cannot be negative')
-        if self.reservation_price and self.reservation_price <= 0.0:
-            raise Exception('Reservation price must be positive')
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
 
     def __str__(self):
         return str(self.trip)
@@ -75,14 +49,6 @@ class TripEvent(models.Model):
 
     class Meta:
         ordering = ['id']
-
-    def clean(self):
-        if self.cost and self.cost <= 0:
-            raise Exception('Cost must be positive')
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.trip}, event:{self.event}'
