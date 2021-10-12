@@ -40,6 +40,7 @@ class TripEvent(models.Model):
         fueling = ('fueling', 'FUELING')
         washing = ('washing', 'WASHING')
         driving = ('driving', 'DRIVING')
+        booked = ('booked', 'BOOKED')
 
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='events')
     event = models.CharField(max_length=50, choices=Event.choices)
