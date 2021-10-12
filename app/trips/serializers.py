@@ -70,7 +70,8 @@ class TripSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        if 'start_date' in data and 'end_date' in data:
-            if data['end_date'] and data['end_date'] <= data['start_date']:
-                raise Exception('End date must occur after start date')
+        start_date = data.get('start_date', self.instance.start_date)
+        end_date = data.get('end_date', None)
+        if end_date and end_date <= start_date:
+            raise Exception('End date must occur after start date')
         return data
