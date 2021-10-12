@@ -8,5 +8,6 @@ router.register('tripstate', views.TripStateViewSet)
 router.register('tripevent', views.TripEventViewSet)
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('', include(router.urls)),
+    path('tripmanagement/', views.TripManagement.as_view(), name='booking')
 ]
