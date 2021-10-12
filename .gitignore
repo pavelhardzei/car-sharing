@@ -6,3 +6,4 @@ migrations/
 static/
 stderr.txt
 stdout.txt
+debug.log
