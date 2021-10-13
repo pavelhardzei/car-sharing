@@ -12,6 +12,9 @@ class Trip(models.Model):
     end_date = models.DateTimeField(blank=True, null=True, default=None)
     total_distance = models.IntegerField(blank=True, null=True, default=None)
     reservation_time = models.IntegerField(blank=True, null=True, default=None)
+    
+    class Meta:
+        ordering = ('id', )
 
     def __str__(self):
         return f'id:{self.id}, car:{self.car}, user:{self.user}'
@@ -49,7 +52,7 @@ class TripEvent(models.Model):
     cost = models.FloatField(blank=True, null=True, default=None)
 
     class Meta:
-        ordering = ['id']
+        ordering = ('id', )
 
     def __str__(self):
         return f'{self.trip}, event:{self.event}'
