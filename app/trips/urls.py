@@ -9,5 +9,6 @@ router.register('tripevent', views.TripEventViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('tripmanagement/', views.TripManagement.as_view(), name='booking')
+    path('tripmanagement/', views.TripManagement.as_view(), name='management'),
+    path('tripmanagement/history/', views.TripsHistory.as_view(), name='history')
 ]
