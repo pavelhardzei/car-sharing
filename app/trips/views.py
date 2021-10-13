@@ -38,6 +38,12 @@ class TripManagement(views.APIView):
             return None
 
     def create_trip(self, user, car):
+        current_trip = self.get_current_trip(user.id)
+        if current_trip is not None:
+            raise Exception('Your trip already exists')
+        if car.car_info.status != CarInfo.Status.available:
+            raise Exception(f'Car is {car.car_info.status}, choose another one')
+
         trip = Trip.objects.select_related('state').prefetch_related('events').create(car=car, user=user)
         if 4 <= datetime.datetime.now().hour < 18:
             rate = TripState.Rate.day
@@ -47,7 +53,6 @@ class TripManagement(views.APIView):
             fare = car.category.evening_fare
         TripState.objects.create(trip=trip, current_rate=rate, fare=fare, parking_price=car.category.parking_price,
                                  reservation_price=car.category.reservation_price)
-        TripEvent.objects.create(trip=trip, event=TripEvent.Event.booked)
 
         car.car_info.status = CarInfo.Status.busy
         car.car_info.save()
@@ -70,28 +75,27 @@ class TripManagement(views.APIView):
         car_id = request.data['car_id']
         action = request.data['action']
         car = self.get_car(car_id)
-        current_trip = self.get_current_trip(request.user.id)
 
-        if action == 'booking':
-            if current_trip is not None:
-                raise Exception('Your trip already exists')
-            if car.car_info.status != CarInfo.Status.available:
-                raise Exception(f'Car is {car.car_info.status}, choose another one')
-
+        if action == TripEvent.Event.booking:
             trip = self.create_trip(request.user, car)
+            TripEvent.objects.create(trip=trip, event=TripEvent.Event.booking)
             trip_ser = TripSerializer(trip)
 
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
-        elif action == 'landing':
+        elif action == TripEvent.Event.landing:
+            current_trip = self.get_current_trip(request.user.id)
             if current_trip is not None:
-                if current_trip.events.first().event != TripEvent.Event.booked or len(current_trip.events.all()) != 1:
+                if current_trip.events.first().event != TripEvent.Event.booking or len(current_trip.events.all()) != 1:
                     raise Exception('Your trip already exists')
-                event = TripEvent.objects.create(trip=current_trip, event=TripEvent.Event.start)
+
+                event = TripEvent.objects.create(trip=current_trip, event=TripEvent.Event.landing)
                 current_trip.events.add(event)
                 trip_ser = TripSerializer(current_trip)
+
                 return Response(trip_ser.data, status=status.HTTP_200_OK)
             else:
                 trip = self.create_trip(request.user, car)
+                TripEvent.objects.create(trip=trip, event=TripEvent.Event.landing)
                 trip_ser = TripSerializer(trip)
 
                 return Response(trip_ser.data, status=status.HTTP_201_CREATED)
