@@ -34,13 +34,13 @@ class TripState(models.Model):
 
 class TripEvent(models.Model):
     class Event(models.TextChoices):
-        start = ('start', 'START')
+        landing = ('landing', 'LANDING')
         end = ('end', 'END')
         parking = ('parking', 'PARKING')
         fueling = ('fueling', 'FUELING')
         washing = ('washing', 'WASHING')
         driving = ('driving', 'DRIVING')
-        booked = ('booked', 'BOOKED')
+        booking = ('booking', 'BOOKING')
 
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='events')
     event = models.CharField(max_length=50, choices=Event.choices)
