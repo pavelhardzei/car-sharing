@@ -1,5 +1,6 @@
 from rest_framework import permissions, viewsets, views, status, generics
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer
@@ -40,9 +41,9 @@ class TripManagement(views.APIView):
     def create_trip(self, user, car):
         current_trip = self.get_current_trip(user.id)
         if current_trip is not None:
-            raise Exception('Your trip already exists')
+            raise ValidationError({'error_message': 'Your trip already exists'})
         if car.car_info.status != CarInfo.Status.available:
-            raise Exception(f'Car is {car.car_info.status}, choose another one')
+            raise ValidationError({'error_message': f'Car is {car.car_info.status}, choose another one'})
 
         trip = Trip.objects.create(car=car, user=user)
         if 4 <= datetime.datetime.now().hour < 18:
@@ -71,7 +72,7 @@ class TripManagement(views.APIView):
         fields = ('car_id', 'action')
         for field in fields:
             if field not in request.data:
-                raise Exception(f'{field} is required')
+                raise ValidationError({'error_message': f'{field} is required'})
         car_id = request.data['car_id']
         action = request.data['action']
         car = self.get_car(car_id)
@@ -86,7 +87,7 @@ class TripManagement(views.APIView):
             current_trip = self.get_current_trip(request.user.id)
             if current_trip is not None:
                 if current_trip.events.first().event != TripEvent.Event.booking or len(current_trip.events.all()) != 1:
-                    raise Exception('Your trip already exists')
+                    raise ValidationError({'error_message': 'Your trip already exists'})
 
                 event = TripEvent.objects.create(trip=current_trip, event=TripEvent.Event.landing)
                 current_trip.events.add(event)
@@ -100,7 +101,7 @@ class TripManagement(views.APIView):
 
                 return Response(trip_ser.data, status=status.HTTP_201_CREATED)
         else:
-            raise Exception('Invalid action')
+            raise ValidationError({'error_message': 'Invalid action'})
 
 
 class TripsHistory(generics.ListAPIView):

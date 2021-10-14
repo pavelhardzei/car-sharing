@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 from datetime import datetime
 
 
@@ -28,9 +29,9 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
 
         if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
+            raise ValidationError({'error_message': 'Superuser must have is_staff=True'})
         if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+            raise ValidationError({'error_message': 'Superuser must have is_superuser=True'})
 
         return self._create_user(email, name, date_of_birth, password, **extra_fields)
 
@@ -55,10 +56,10 @@ class UserAccount(AbstractBaseUser):
         field_value_map = dict(zip((self.USERNAME_FIELD, ) + self.REQUIRED_FIELDS, values))
         for field_name, value in field_value_map.items():
             if not value:
-                raise ValueError(f'The {field_name} value must be set')
+                raise ValidationError({'error_message': f'The {field_name} value must be set'})
 
         if (datetime.now() - datetime.strptime(self.date_of_birth.__str__(), '%Y-%m-%d')).days // 365 < 18:
-            raise ValueError('Age must be >= 18')
+            raise ValidationError({'error_message': 'Age must be >= 18'})
         super().save(*args, **kwargs)
 
     def get_full_name(self):

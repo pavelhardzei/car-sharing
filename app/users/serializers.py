@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.authtoken.views import Token
 from .models import UserAccount
 
@@ -44,7 +45,7 @@ class TokenSerializer(serializers.Serializer):
         password = attrs.get('password')
 
         if email and name or not password or not email and not name:
-            raise exceptions.ValidationError('Must include email + pwd or name + pwd')
+            raise ValidationError({'error_message': 'Must include email + pwd or name + pwd'})
 
         if email:
             user = get_object_or_404(UserAccount, email=email)
@@ -54,9 +55,9 @@ class TokenSerializer(serializers.Serializer):
         user = authenticate(email=user.email, password=password)
         if user:
             if not user.is_active:
-                raise exceptions.ValidationError('User account is disabled.')
+                raise ValidationError({'error_message': 'User account is disabled'})
         else:
-            raise exceptions.ValidationError('Unable to log in with provided credentials.')
+            raise ValidationError({'error_message': 'Unable to log in with provided credentials'})
 
         attrs['user'] = user
         return attrs
