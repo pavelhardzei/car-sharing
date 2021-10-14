@@ -5,7 +5,7 @@ from .models import Trip, TripState, TripEvent
 class TripStateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TripState
-        fields = '__all__'
+        fields = ('trip', 'current_rate', 'fare', 'parking_price', 'reservation_price')
 
         extra_kwargs = {
             'trip': {
@@ -32,7 +32,7 @@ class TripStateSerializer(serializers.ModelSerializer):
 class TripEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = TripEvent
-        fields = '__all__'
+        fields = ('id', 'trip', 'event', 'timestamp', 'credentials', 'cost')
 
         extra_kwargs = {
             'trip': {
@@ -52,7 +52,8 @@ class TripSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trip
-        fields = '__all__'
+        fields = ('id', 'state', 'car', 'user', 'total_cost', 'start_date', 'end_date', 'total_distance',
+                  'reservation_time', 'events')
 
     def validate_total_cost(self, value):
         if value and value <= 0:

@@ -6,7 +6,7 @@ import datetime
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('id', 'name', 'day_fare', 'evening_fare', 'parking_price', 'reservation_price')
 
     def validate_day_fare(self, value):
         if value <= 0:
@@ -32,7 +32,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class CarInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarInfo
-        fields = '__all__'
+        fields = ('car', 'longitude', 'latitude', 'petrol_level', 'status')
 
         extra_kwargs = {
             'car': {
@@ -61,7 +61,7 @@ class CarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Car
-        fields = '__all__'
+        fields = ('id', 'car_info', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category')
 
     def get_fields(self, *args, **kwargs):
         fields = super().get_fields()
