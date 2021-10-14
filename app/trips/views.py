@@ -44,7 +44,7 @@ class TripManagement(views.APIView):
         if car.car_info.status != CarInfo.Status.available:
             raise Exception(f'Car is {car.car_info.status}, choose another one')
 
-        trip = Trip.objects.select_related('state').prefetch_related('events').create(car=car, user=user)
+        trip = Trip.objects.create(car=car, user=user)
         if 4 <= datetime.datetime.now().hour < 18:
             rate = TripState.Rate.day
             fare = car.category.day_fare
