@@ -1,4 +1,4 @@
-from rest_framework import permissions, viewsets, views, status
+from rest_framework import permissions, viewsets, views, status, generics
 from rest_framework.response import Response
 from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
@@ -103,13 +103,10 @@ class TripManagement(views.APIView):
             raise Exception('Invalid action')
 
 
-class TripsHistory(views.APIView):
+class TripsHistory(generics.ListAPIView):
+    serializer_class = TripSerializer
     permission_classes = (permissions.IsAuthenticated, )
 
-    def get_trips(self, user_id):
-        return Trip.objects.select_related('state').prefetch_related('events').filter(user=user_id).order_by('-id')
-
-    def get(self, request):
-        trips = self.get_trips(request.user.id)
-        trips_ser = TripSerializer(trips, many=True)
-        return Response(trips_ser.data)
+    def get_queryset(self):
+        return Trip.objects.select_related('state').prefetch_related('events')\
+            .filter(user=self.request.user.id).order_by('-id')
