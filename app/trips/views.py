@@ -28,24 +28,26 @@ class TripEventViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser, )
 
 
+def get_car(pk):
+    try:
+        return Car.objects.select_related('car_info').get(pk=pk)
+    except Car.DoesNotExist:
+        raise ValidationError({'error_message': 'car doesn\'t exist'})
+
+
+def get_current_trip(**kwargs):
+    try:
+        return Trip.objects.select_related('state').prefetch_related('events').get(end_date=None, **kwargs)
+    except Trip.DoesNotExist:
+        raise ValidationError({'error_message': 'trip doesn\'t exist'})
+
+
 class TripManagement(views.APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
-    def get_car(self, pk):
-        try:
-            return Car.objects.select_related('car_info').get(pk=pk)
-        except Car.DoesNotExist:
-            raise ValidationError({'error_message': 'car doesn\'t exist'})
-
-    def get_current_trip(self, user_id):
-        try:
-            return Trip.objects.select_related('state').prefetch_related('events').get(user=user_id, end_date=None)
-        except Trip.DoesNotExist:
-            return None
-
     @transaction.atomic
     def create_trip(self, user, car):
-        current_trip = self.get_current_trip(user.id)
+        current_trip = get_current_trip(user=user.id)
         if current_trip is not None:
             raise ValidationError({'error_message': 'Your trip already exists'})
         if car.car_info.status != CarInfo.Status.available:
@@ -67,7 +69,7 @@ class TripManagement(views.APIView):
         return trip
 
     def get(self, request):
-        current_trip = self.get_current_trip(request.user.id)
+        current_trip = get_current_trip(user=request.user.id)
         if current_trip is None:
             return Response({'message': 'You haven\'t got started trips'})
 
@@ -82,7 +84,7 @@ class TripManagement(views.APIView):
                 raise ValidationError({'error_message': f'{field} is required'})
         car_id = request.data['car_id']
         action = request.data['action']
-        car = self.get_car(car_id)
+        car = get_car(car_id)
 
         if action == TripEvent.Event.booking:
             trip = self.create_trip(request.user, car)
@@ -91,7 +93,7 @@ class TripManagement(views.APIView):
 
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
         elif action == TripEvent.Event.landing:
-            current_trip = self.get_current_trip(request.user.id)
+            current_trip = get_current_trip(user=request.user.id)
             if current_trip is not None:
                 if current_trip.events.first().event != TripEvent.Event.booking or len(current_trip.events.all()) != 1:
                     raise ValidationError({'error_message': 'Your trip already exists'})
@@ -116,18 +118,6 @@ class TripManagement(views.APIView):
 class TripMaintenance(views.APIView):
     permission_classes = (permissions.IsAdminUser, )
 
-    def get_car(self, pk):
-        try:
-            return Car.objects.select_related('car_info').get(pk=pk)
-        except Car.DoesNotExist:
-            raise ValidationError({'error_message': 'car doesn\'t exist'})
-
-    def get_current_trip(self, car_id):
-        try:
-            return Trip.objects.select_related('state').prefetch_related('events').get(car=car_id, end_date=None)
-        except Trip.DoesNotExist:
-            raise ValidationError({'error_message': 'trip doesn\'t exist'})
-
     def pay_by_credentials(self, credentials):
         # Some bank operations
         cost = random.randint(1, 5)
@@ -140,8 +130,8 @@ class TripMaintenance(views.APIView):
             if field not in request.data:
                 raise ValidationError({'error_message': f'{field} is required'})
 
-        car = self.get_car(request.data['car_id'])
-        trip = self.get_current_trip(request.data['car_id'])
+        car = get_car(request.data['car_id'])
+        trip = get_current_trip(car=request.data['car_id'])
         event = request.data['event']
         credentials = request.data['credentials']
 
