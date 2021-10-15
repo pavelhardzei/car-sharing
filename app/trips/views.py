@@ -126,7 +126,7 @@ class TripMaintenance(views.APIView):
 
     @transaction.atomic
     def post(self, request):
-        fields = ('car_id', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude')
+        fields = ('car_id', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude', 'total_distance')
         for field in fields:
             if field not in request.data:
                 raise ValidationError({'error_message': f'{field} is required'})
@@ -142,6 +142,9 @@ class TripMaintenance(views.APIView):
             car.car_info.longitude = request.data['longitude']
         if request.data['latitude']:
             car.car_info.longitude = request.data['latitude']
+        if request.data['total_distance']:
+            trip.total_distance = request.data['total_distance']
+            trip.save()
         car.car_info.save()
 
         if event in TripEvent.Event.values:
