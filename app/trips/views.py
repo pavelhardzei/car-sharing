@@ -6,6 +6,7 @@ from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer
 import datetime
+import random
 
 
 class TripViewSet(viewsets.ModelViewSet):
@@ -30,7 +31,10 @@ class TripManagement(views.APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
     def get_car(self, pk):
-        return Car.objects.select_related('car_info').get(pk=pk)
+        try:
+            return Car.objects.select_related('car_info').get(pk=pk)
+        except Car.DoesNotExist:
+            raise ValidationError({'error_message': 'car doesn\'t exist'})
 
     def get_current_trip(self, user_id):
         try:
@@ -102,6 +106,82 @@ class TripManagement(views.APIView):
                 return Response(trip_ser.data, status=status.HTTP_201_CREATED)
         else:
             raise ValidationError({'error_message': 'Invalid action'})
+
+
+class TripMaintenance(views.APIView):
+    permission_classes = (permissions.IsAdminUser, )
+
+    def get_car(self, pk):
+        try:
+            return Car.objects.select_related('car_info').get(pk=pk)
+        except Car.DoesNotExist:
+            raise ValidationError({'error_message': 'car doesn\'t exist'})
+
+    def get_current_trip(self, car_id):
+        try:
+            return Trip.objects.select_related('state').prefetch_related('events').get(car=car_id, end_date=None)
+        except Trip.DoesNotExist:
+            raise ValidationError({'error_message': 'trip doesn\'t exist'})
+
+    def pay_by_credentials(self, credentials):
+        # Some bank operations
+        cost = random.randint(1, 5)
+        return cost
+
+    def post(self, request):
+        fields = ('car_id', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude')
+        for field in fields:
+            if field not in request.data:
+                raise ValidationError({'error_message': f'{field} is required'})
+
+        car = self.get_car(request.data['car_id'])
+        trip = self.get_current_trip(request.data['car_id'])
+        event = request.data['event']
+        credentials = request.data['credentials']
+
+        if request.data['petrol_level']:
+            car.car_info.petrol_level = request.data['petrol_level']
+        if request.data['longitude']:
+            car.car_info.longitude = request.data['longitude']
+        if request.data['latitude']:
+            car.car_info.longitude = request.data['latitude']
+        car.car_info.save()
+
+        if event in TripEvent.Event.values:
+            if event in (TripEvent.Event.booking, TripEvent.Event.landing, TripEvent.Event.end):
+                raise ValidationError({'error_message': f'Event \'{event}\' must be set in another place'})
+
+            trip_event = TripEvent(trip=trip, event=event)
+            previous_event = trip.events.last()
+
+            if event != TripEvent.Event.end_parking and previous_event.event == TripEvent.Event.parking:
+                raise ValidationError({'error_message': f'Event \'{event}\' cannot occur after \'{previous_event.event}\''})
+            if event == TripEvent.Event.end_parking:
+                if previous_event.event != TripEvent.Event.parking:
+                    raise ValidationError({'error_message': f'Event \'{event}\' must occur after \'{TripEvent.Event.parking}\''})
+            if event == TripEvent.Event.fueling:
+                if credentials is None:
+                    raise ValidationError({'error_message': f'Credentials must be transferred when \'{event}\''})
+                car.car_info.petrol_level = 100
+                car.car_info.save()
+            if event == TripEvent.Event.washing and credentials is None:
+                raise ValidationError({'error_message': f'Credentials must be transferred when \'{event}\''})
+
+            if credentials:
+                trip_event.credentials = credentials
+                trip_event.cost = self.pay_by_credentials(credentials)
+                if trip.total_cost:
+                    trip.total_cost += trip_event.cost
+                else:
+                    trip.total_cost = trip_event.cost
+                trip.save()
+            trip_event.save()
+            trip.events.add(trip_event)
+
+        trip_ser = TripSerializer(trip)
+        car_ser = CarSerializer(car)
+
+        return Response({'car': car_ser.data, 'trip': trip_ser.data})
 
 
 class TripsHistory(generics.ListAPIView):
