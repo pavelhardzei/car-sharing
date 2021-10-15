@@ -11,5 +11,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('tripmanagement/', views.TripManagement.as_view(), name='management'),
     path('tripmanagement/history/', views.TripsHistory.as_view(), name='history'),
-    path('tripmaintenance/', views.TripMaintenance.as_view(), name='maintenance')
+    path('tripmaintenance/', views.TripMaintenance.as_view(), name='maintenance'),
+    path('tripmanagement/cost/', views.TripCost.as_view(), name='cost')
 ]

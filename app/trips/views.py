@@ -1,6 +1,7 @@
 from rest_framework import permissions, viewsets, views, status, generics
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from django.utils import timezone
 from django.db import transaction
 from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
@@ -187,3 +188,26 @@ class TripsHistory(generics.ListAPIView):
     def get_queryset(self):
         return Trip.objects.select_related('state').prefetch_related('events')\
             .filter(user=self.request.user.id).order_by('-id')
+
+
+def get_total_cost(trip):
+    total_cost = 0
+    if trip.total_cost:
+        total_cost += trip.total_cost
+    if trip.reservation_time:
+        total_cost += trip.reservation_time * trip.state.reservation_price
+    current_time = timezone.now()
+    total_cost += (current_time - trip.start_date).total_seconds() / 3600 * trip.state.fare
+
+    return total_cost, current_time
+
+
+class TripCost(views.APIView):
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def get(self, request):
+        trip = get_current_trip(user=request.user.id)
+        total_cost, _ = get_total_cost(trip)
+        trip_ser = TripSerializer(trip)
+
+        return Response({'total_cost': total_cost, 'trip': trip_ser.data})
