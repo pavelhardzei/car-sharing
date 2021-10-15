@@ -1,6 +1,7 @@
 from rest_framework import permissions, viewsets, views, status, generics
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from django.db import transaction
 from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer
@@ -42,6 +43,7 @@ class TripManagement(views.APIView):
         except Trip.DoesNotExist:
             return None
 
+    @transaction.atomic
     def create_trip(self, user, car):
         current_trip = self.get_current_trip(user.id)
         if current_trip is not None:
@@ -72,6 +74,7 @@ class TripManagement(views.APIView):
         trip_ser = TripSerializer(current_trip)
         return Response(trip_ser.data)
 
+    @transaction.atomic
     def post(self, request):
         fields = ('car_id', 'action')
         for field in fields:
@@ -130,6 +133,7 @@ class TripMaintenance(views.APIView):
         cost = random.randint(1, 5)
         return cost
 
+    @transaction.atomic
     def post(self, request):
         fields = ('car_id', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude')
         for field in fields:
