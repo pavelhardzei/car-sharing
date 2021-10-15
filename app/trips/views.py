@@ -95,6 +95,8 @@ class TripManagement(views.APIView):
 
                 event = TripEvent.objects.create(trip=current_trip, event=TripEvent.Event.landing)
                 current_trip.events.add(event)
+                current_trip.reservation_time = (event.timestamp - current_trip.events.first().timestamp).total_seconds() // 60
+                current_trip.save()
                 trip_ser = TripSerializer(current_trip)
 
                 return Response(trip_ser.data, status=status.HTTP_200_OK)
