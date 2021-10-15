@@ -40,6 +40,7 @@ class TripEvent(models.Model):
         landing = ('landing', 'LANDING')
         end = ('end', 'END')
         parking = ('parking', 'PARKING')
+        end_parking = ('end_parking', 'END_PARKING')
         fueling = ('fueling', 'FUELING')
         washing = ('washing', 'WASHING')
         driving = ('driving', 'DRIVING')
