@@ -12,5 +12,6 @@ urlpatterns = [
     path('tripmanagement/', views.TripManagement.as_view(), name='management'),
     path('tripmanagement/history/', views.TripsHistory.as_view(), name='history'),
     path('tripmaintenance/', views.TripMaintenance.as_view(), name='maintenance'),
-    path('tripmanagement/cost/', views.TripCost.as_view(), name='cost')
+    path('tripmanagement/cost/', views.TripCost.as_view(), name='cost'),
+    path('tripmanagement/end/', views.TripEnd.as_view(), name='trip_end')
 ]

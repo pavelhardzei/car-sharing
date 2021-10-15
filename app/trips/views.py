@@ -211,3 +211,32 @@ class TripCost(views.APIView):
         trip_ser = TripSerializer(trip)
 
         return Response({'total_cost': total_cost, 'trip': trip_ser.data})
+
+
+class TripEnd(views.APIView):
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def pay_for_trip(self, total_cost):
+        # Pay for the trip using users bank card props?
+        bank_check = 'some info'
+        return bank_check
+
+    @transaction.atomic
+    def post(self, request):
+        trip = get_current_trip(user=request.user.id)
+        total_cost, end_date = get_total_cost(trip)
+
+        event = TripEvent.objects.create(trip=trip, event=TripEvent.Event.end, timestamp=end_date)
+        trip.events.add(event)
+        trip.total_cost = total_cost
+        trip.end_date = end_date
+        trip.save()
+
+        trip.car.car_info.status = CarInfo.Status.available
+        trip.car.car_info.save()
+
+        bank_check = self.pay_for_trip(total_cost)
+
+        trip_ser = TripSerializer(trip)
+        car_ser = CarSerializer(trip.car)
+        return Response({'trip': trip_ser.data, 'car': car_ser.data, 'check': bank_check})
