@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from .models import Trip, TripState, TripEvent
+from cars.serializers import CarSerializer
 
 
 class TripStateSerializer(serializers.ModelSerializer):
@@ -50,6 +51,7 @@ class TripEventSerializer(serializers.ModelSerializer):
 class TripSerializer(serializers.ModelSerializer):
     state = TripStateSerializer(read_only=True)
     events = TripEventSerializer(many=True, read_only=True)
+    car = CarSerializer(read_only=True)
 
     class Meta:
         model = Trip
