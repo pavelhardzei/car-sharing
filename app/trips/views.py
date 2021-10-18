@@ -12,7 +12,7 @@ import random
 
 
 class TripViewSet(viewsets.ModelViewSet):
-    queryset = Trip.objects.select_related('state').prefetch_related('events').all()
+    queryset = Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').all()
     serializer_class = TripSerializer
     permission_classes = (permissions.IsAdminUser, )
 
@@ -38,7 +38,7 @@ def get_car(pk):
 
 def get_current_trip(**kwargs):
     try:
-        return Trip.objects.select_related('state').prefetch_related('events').get(end_date=None, **kwargs)
+        return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, **kwargs)
     except Trip.DoesNotExist:
         return None
 
@@ -130,10 +130,10 @@ class TripMaintenance(views.APIView):
             if field not in request.data:
                 raise ValidationError({'error_message': f'{field} is required'})
 
-        car = get_car(request.data['car'])
         trip = get_current_trip(car=request.data['car'])
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
+        car = trip.car
         event = request.data.pop('event', None)
         credentials = request.data.pop('credentials', None)
 
@@ -183,9 +183,7 @@ class TripMaintenance(views.APIView):
         elif event:
             raise ValidationError({'error_message': 'Invalid event'})
 
-        car_ser = CarSerializer(car)
-
-        return Response({'car': car_ser.data, 'trip': trip_ser.data})
+        return Response(trip_ser.data)
 
 
 class TripsHistory(generics.ListAPIView):
@@ -249,5 +247,4 @@ class TripEnd(views.APIView):
         bank_check = self.pay_for_trip(total_cost)
 
         trip_ser = TripSerializer(trip)
-        car_ser = CarSerializer(trip.car)
-        return Response({'trip': trip_ser.data, 'car': car_ser.data, 'check': bank_check})
+        return Response({'trip': trip_ser.data, 'check': bank_check})
