@@ -180,6 +180,8 @@ class TripMaintenance(views.APIView):
                 trip.save()
             trip_event.save()
             trip.events.add(trip_event)
+        elif event:
+            raise ValidationError({'error_message': 'Invalid event'})
 
         car_ser = CarSerializer(car)
 
