@@ -46,7 +46,6 @@ def get_current_trip(**kwargs):
 class TripManagement(views.APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
-    @transaction.atomic
     def create_trip(self, user, car):
         current_trip = get_current_trip(user=user.id)
         if current_trip:
