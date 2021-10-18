@@ -22,7 +22,7 @@ urlpatterns = [
     path('', include('base_app.urls')),
     path('', include('users.urls')),
     path('', include('cars.urls')),
-    path('', include('trips.urls')),
+    path('trips/', include('trips.urls')),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
