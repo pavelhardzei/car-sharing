@@ -40,7 +40,7 @@ def get_current_trip(**kwargs):
     try:
         return Trip.objects.select_related('state').prefetch_related('events').get(end_date=None, **kwargs)
     except Trip.DoesNotExist:
-        raise ValidationError({'error_message': 'trip doesn\'t exist'})
+        return None
 
 
 class TripManagement(views.APIView):
@@ -49,7 +49,7 @@ class TripManagement(views.APIView):
     @transaction.atomic
     def create_trip(self, user, car):
         current_trip = get_current_trip(user=user.id)
-        if current_trip is not None:
+        if current_trip:
             raise ValidationError({'error_message': 'Your trip already exists'})
         if car.car_info.status != CarInfo.Status.available:
             raise ValidationError({'error_message': f'Car is {car.car_info.status}, choose another one'})
@@ -95,7 +95,7 @@ class TripManagement(views.APIView):
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
         elif action == TripEvent.Event.landing:
             current_trip = get_current_trip(user=request.user.id)
-            if current_trip is not None:
+            if current_trip:
                 if current_trip.events.first().event != TripEvent.Event.booking or len(current_trip.events.all()) != 1:
                     raise ValidationError({'error_message': 'Your trip already exists'})
 
@@ -133,6 +133,8 @@ class TripMaintenance(views.APIView):
 
         car = get_car(request.data['car_id'])
         trip = get_current_trip(car=request.data['car_id'])
+        if trip is None:
+            return Response({'message': 'Current trip doesn\'t exist'})
         event = request.data['event']
         credentials = request.data['credentials']
 
@@ -210,6 +212,8 @@ class TripCost(views.APIView):
 
     def get(self, request):
         trip = get_current_trip(user=request.user.id)
+        if trip is None:
+            return Response({'message': 'Current trip doesn\'t exist'})
         total_cost, _ = get_total_cost(trip)
         trip_ser = TripSerializer(trip)
 
@@ -227,6 +231,8 @@ class TripEnd(views.APIView):
     @transaction.atomic
     def post(self, request):
         trip = get_current_trip(user=request.user.id)
+        if trip is None:
+            return Response({'message': 'Current trip doesn\'t exist'})
         total_cost, end_date = get_total_cost(trip)
 
         event = TripEvent.objects.create(trip=trip, event=TripEvent.Event.end, timestamp=end_date)
