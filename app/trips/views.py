@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.db import transaction
 from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
-from cars.serializers import CarSerializer
+from cars.serializers import CarSerializer, CarInfoSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer
 import datetime
 import random
@@ -125,28 +125,30 @@ class TripMaintenance(views.APIView):
 
     @transaction.atomic
     def post(self, request):
-        fields = ('car_id', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude', 'total_distance')
+        fields = ('car', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude', 'total_distance')
         for field in fields:
             if field not in request.data:
                 raise ValidationError({'error_message': f'{field} is required'})
 
-        car = get_car(request.data['car_id'])
-        trip = get_current_trip(car=request.data['car_id'])
+        car = get_car(request.data['car'])
+        trip = get_current_trip(car=request.data['car'])
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
-        event = request.data['event']
-        credentials = request.data['credentials']
+        event = request.data.pop('event', None)
+        credentials = request.data.pop('credentials', None)
 
-        if request.data['petrol_level']:
-            car.car_info.petrol_level = request.data['petrol_level']
-        if request.data['longitude']:
-            car.car_info.longitude = request.data['longitude']
-        if request.data['latitude']:
-            car.car_info.longitude = request.data['latitude']
-        if request.data['total_distance']:
-            trip.total_distance = request.data['total_distance']
-            trip.save()
-        car.car_info.save()
+        filtered = {k: v for k, v in request.data.items() if v}
+        car_info_ser = CarInfoSerializer(car.car_info, data=filtered, partial=True)
+        if car_info_ser.is_valid():
+            car_info_ser.save()
+        else:
+            raise ValidationError(car_info_ser.errors)
+
+        trip_ser = TripSerializer(trip, data=filtered, partial=True)
+        if trip_ser.is_valid():
+            trip_ser.save()
+        else:
+            raise ValidationError(trip_ser.errors)
 
         if event in TripEvent.Event.values:
             if event in (TripEvent.Event.booking, TripEvent.Event.landing, TripEvent.Event.end):
@@ -179,7 +181,6 @@ class TripMaintenance(views.APIView):
             trip_event.save()
             trip.events.add(trip_event)
 
-        trip_ser = TripSerializer(trip)
         car_ser = CarSerializer(car)
 
         return Response({'car': car_ser.data, 'trip': trip_ser.data})
