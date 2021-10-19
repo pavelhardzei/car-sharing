@@ -190,7 +190,7 @@ class TripsHistory(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated, )
 
     def get_queryset(self):
-        return Trip.objects.select_related('state').prefetch_related('events')\
+        return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events')\
             .filter(user=self.request.user.id).order_by('-id')
 
 
