@@ -25,7 +25,7 @@ class CarsTests(TestCase):
         response = self.client.post(reverse('category-list'), {'name': 'Comfort', 'day_fare': 10,
                                     'evening_fare': 15, 'parking_price': 2, 'reservation_price': 3})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+        response = self.client.post(reverse('cars-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
                                     'color': 'brawn', 'year': 2018, 'weight': 900, 'mileage': 2000, 'category': self.test_category.id})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.post(reverse('carinfo-list'), {'car': self.test_car.id, 'longitude': '30.234566',
@@ -40,10 +40,10 @@ class CarsTests(TestCase):
                                         'evening_fare': 15, 'parking_price': -2, 'reservation_price': 3})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        response = self.client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+        response = self.client.post(reverse('cars-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
                                         'color': 'brawn', 'year': 2018, 'weight': 900, 'mileage': 2000, 'category': 100})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        response = self.client.post(reverse('car-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
+        response = self.client.post(reverse('cars-list'), {'brand': 'KIA', 'register_number': '4400KC-4',
                                         'color': 'brawn', 'year': 2300, 'weight': 900, 'mileage': 2000, 'category': self.test_category.id})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -57,20 +57,20 @@ class CarsTests(TestCase):
     def test_change_year(self):
         year_change_to = 2000
         current_year = self.test_car.year
-        response = self.client.patch(reverse('car-detail', kwargs={'pk': self.test_car.id}), {'year': year_change_to},
+        response = self.client.patch(reverse('cars-detail', kwargs={'pk': self.test_car.id}), {'year': year_change_to},
                                      content_type='application/json')
         self.assertNotEqual(json.loads(response.content)['year'], year_change_to)
         self.assertEqual(json.loads(response.content)['year'], current_year)
 
     def test_delete_car(self):
-        response = self.client.delete(reverse('car-detail', kwargs={'pk': self.test_car.id}))
+        response = self.client.delete(reverse('cars-detail', kwargs={'pk': self.test_car.id}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(Car.objects.all()), 0)
 
     def test_permission(self):
         self.permission = permissions.IsAdminUser()
 
-        request = self.factory.get(reverse('car-list'))
+        request = self.factory.get(reverse('cars-list'))
         request.user = self.normaluser
         self.assertFalse(self.permission.has_permission(request, None))
         request.user = self.superuser
