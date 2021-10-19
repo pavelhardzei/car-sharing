@@ -46,7 +46,7 @@ def get_current_trip(**kwargs):
 class TripManagement(views.APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
-    def create_trip(self, user, car):
+    def create_trip(self, user, car, event):
         current_trip = get_current_trip(user=user.id)
         if current_trip:
             raise ValidationError({'error_message': 'Your trip already exists'})
@@ -62,6 +62,7 @@ class TripManagement(views.APIView):
             fare = car.category.evening_fare
         TripState.objects.create(trip=trip, current_rate=rate, fare=fare, parking_price=car.category.parking_price,
                                  reservation_price=car.category.reservation_price)
+        TripEvent.objects.create(trip=trip, event=event)
 
         car.car_info.status = CarInfo.Status.busy
         car.car_info.save()
@@ -87,8 +88,7 @@ class TripManagement(views.APIView):
         car = get_car(car_id)
 
         if action == TripEvent.Event.booking:
-            trip = self.create_trip(request.user, car)
-            TripEvent.objects.create(trip=trip, event=TripEvent.Event.booking)
+            trip = self.create_trip(request.user, car, TripEvent.Event.booking)
             trip_ser = TripSerializer(trip)
 
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
@@ -106,8 +106,7 @@ class TripManagement(views.APIView):
 
                 return Response(trip_ser.data, status=status.HTTP_200_OK)
             else:
-                trip = self.create_trip(request.user, car)
-                TripEvent.objects.create(trip=trip, event=TripEvent.Event.landing)
+                trip = self.create_trip(request.user, car, TripEvent.Event.landing)
                 trip_ser = TripSerializer(trip)
 
                 return Response(trip_ser.data, status=status.HTTP_201_CREATED)
