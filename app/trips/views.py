@@ -133,8 +133,8 @@ class TripMaintenance(views.APIView):
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
         car = trip.car
-        event = request.data.pop('event', None)
-        credentials = request.data.pop('credentials', None)
+        event = request.data['event']
+        credentials = request.data['credentials']
 
         filtered = {k: v for k, v in request.data.items() if v}
         car_info_ser = CarInfoSerializer(car.car_info, data=filtered, partial=True)
