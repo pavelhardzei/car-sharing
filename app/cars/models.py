@@ -29,6 +29,9 @@ class Car(models.Model):
     weight = models.IntegerField()
     mileage = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category')
+    
+    class Meta:
+        ordering = ('id', )
 
     def __str__(self):
         return self.register_number
