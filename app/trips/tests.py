@@ -6,6 +6,7 @@ from .models import Trip, TripState, TripEvent
 from cars.models import Car, Category, CarInfo
 from django.test import TestCase
 from unittest.mock import patch
+from decimal import Decimal
 
 
 @patch('rest_framework.views.APIView.check_permissions', lambda *args, **kwargs: True)
@@ -46,8 +47,44 @@ class TripsTests(TestCase):
 
     def test_trip_maintenance(self):
         self.api_client.post(reverse('management'), {'car_id': self.test_car.id, 'action': TripEvent.Event.landing})
-        trip = Trip.objects.all().first()
         response = self.api_client.post(reverse('maintenance'), {'car': self.test_car.id, 'event': TripEvent.Event.washing,
                                         'credentials': 'some creds', 'petrol_level': 50, 'longitude': '33.123453',
                                         'latitude': '31.674566', 'total_distance': 20})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        trip = Trip.objects.all().first()
+        car_info = trip.car.car_info
+
+        self.assertEqual(car_info.petrol_level, 50)
+        self.assertEqual(car_info.longitude, Decimal('33.123453'))
+        self.assertEqual(car_info.latitude, Decimal('31.674566'))
+        self.assertEqual(car_info.status, CarInfo.Status.busy)
+        self.assertEqual(trip.total_distance, 20)
+        self.assertEqual(trip.events.last().event, TripEvent.Event.washing)
+
+    def test_trip_maintenance_invalid(self):
+        self.api_client.post(reverse('management'), {'car_id': self.test_car.id, 'action': TripEvent.Event.landing})
+        response = self.api_client.post(reverse('maintenance'), {'car': self.test_car.id, 'event': TripEvent.Event.end,
+                                         'credentials': 'some creds', 'petrol_level': 50, 'longitude': '33.123453',
+                                         'latitude': '31.674566', 'total_distance': 20})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.api_client.post(reverse('maintenance'), {'car': self.test_car.id, 'event': TripEvent.Event.parking,
+                                         'credentials': 'some creds', 'petrol_level': 50,
+                                         'longitude': '33.123453', 'latitude': '31.674566', 'total_distance': 20})
+        response = self.api_client.post(reverse('maintenance'),
+                                        {'car': self.test_car.id, 'event': TripEvent.Event.parking,
+                                         'credentials': 'some creds', 'petrol_level': 50,
+                                         'longitude': '33.123453', 'latitude': '31.674566', 'total_distance': 20})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_trip_end(self):
+        self.api_client.post(reverse('management'), {'car_id': self.test_car.id, 'action': TripEvent.Event.landing})
+        response = self.api_client.post(reverse('trip_end'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        trip = Trip.objects.all().first()
+        car_info = trip.car.car_info
+
+        self.assertEqual(trip.events.last().event, TripEvent.Event.end)
+        self.assertNotEqual(trip.total_cost, None)
+        self.assertNotEqual(trip.end_date, None)
+        self.assertEqual(car_info.status, CarInfo.Status.available)
