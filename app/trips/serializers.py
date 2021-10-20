@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from .models import Trip, TripState, TripEvent
-from cars.serializers import CarSerializer
+from cars.serializers import CarSerializer, CarSerializerHistory
 
 
 class TripStateSerializer(serializers.ModelSerializer):
@@ -79,3 +79,7 @@ class TripSerializer(serializers.ModelSerializer):
         if end_date and end_date <= start_date:
             raise ValidationError('End date must occur after start date')
         return data
+
+
+class TripSerializerHistory(TripSerializer):
+    car = CarSerializerHistory(read_only=True)

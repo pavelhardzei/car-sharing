@@ -57,12 +57,10 @@ class CarInfoSerializer(serializers.ModelSerializer):
         return value
 
 
-class CarSerializer(serializers.ModelSerializer):
-    car_info = CarInfoSerializer(read_only=True)
-
+class CarSerializerHistory(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = ('id', 'car_info', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category')
+        fields = ('id', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category')
 
     def get_fields(self, *args, **kwargs):
         fields = super().get_fields()
@@ -85,3 +83,11 @@ class CarSerializer(serializers.ModelSerializer):
         if value < 0:
             raise ValidationError({'error_message': 'Mileage cannot be negative'})
         return value
+
+
+class CarSerializer(CarSerializerHistory):
+    car_info = CarInfoSerializer(read_only=True)
+
+    class Meta:
+        model = Car
+        fields = ('id', 'car_info', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category')

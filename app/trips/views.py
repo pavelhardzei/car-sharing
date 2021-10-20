@@ -6,7 +6,7 @@ from django.db import transaction
 from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer, CarInfoSerializer
-from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer
+from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer, TripSerializerHistory
 import datetime
 import random
 
@@ -186,11 +186,11 @@ class TripMaintenance(views.APIView):
 
 
 class TripsHistory(generics.ListAPIView):
-    serializer_class = TripSerializer
+    serializer_class = TripSerializerHistory
     permission_classes = (permissions.IsAuthenticated, )
 
     def get_queryset(self):
-        return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events')\
+        return Trip.objects.select_related('state', 'car').prefetch_related('events')\
             .filter(user=self.request.user.id).order_by('-id')
 
 
