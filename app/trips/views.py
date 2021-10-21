@@ -95,7 +95,7 @@ class TripManagement(views.APIView):
         elif action == TripEvent.Event.landing:
             current_trip = get_current_trip(user=request.user.id)
             if current_trip:
-                if current_trip.events.first().event != TripEvent.Event.booking or len(current_trip.events.all()) != 1:
+                if current_trip.events.first().event != TripEvent.Event.booking or current_trip.events.count() != 1:
                     raise ValidationError({'error_message': 'Your trip already exists'})
 
                 event = TripEvent.objects.create(trip=current_trip, event=TripEvent.Event.landing)
