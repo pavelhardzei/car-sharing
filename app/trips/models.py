@@ -7,7 +7,7 @@ from cars.models import Car
 class Trip(models.Model):
     car = models.ForeignKey(Car, blank=True, null=True, default=None, on_delete=models.CASCADE, related_name='trips')
     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='trips')
-    total_cost = models.FloatField(blank=True, null=True, default=None)
+    total_cost = models.FloatField(default=0)
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(blank=True, null=True, default=None)
     total_distance = models.IntegerField(blank=True, null=True, default=None)
