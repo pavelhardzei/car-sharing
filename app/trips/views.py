@@ -45,6 +45,16 @@ class TripManagement(views.APIView):
         except Car.DoesNotExist:
             raise ValidationError({'error_message': 'car doesn\'t exist'})
 
+    def get_rate(self, car):
+        if 4 <= datetime.datetime.now().hour < 18:
+            rate = TripState.Rate.day
+            fare = car.category.day_fare
+        else:
+            rate = TripState.Rate.evening
+            fare = car.category.evening_fare    
+
+        return rate, fare
+
     def create_trip(self, user, car, event):
         current_trip = self.get_current_trip(user.id)
         if current_trip:
@@ -53,12 +63,7 @@ class TripManagement(views.APIView):
             raise ValidationError({'error_message': f'Car is {car.car_info.status}, choose another one'})
 
         trip = Trip.objects.create(car=car, user=user)
-        if 4 <= datetime.datetime.now().hour < 18:
-            rate = TripState.Rate.day
-            fare = car.category.day_fare
-        else:
-            rate = TripState.Rate.evening
-            fare = car.category.evening_fare
+        rate, fare = self.get_rate(car)
         TripState.objects.create(trip=trip, current_rate=rate, fare=fare, parking_price=car.category.parking_price,
                                  reservation_price=car.category.reservation_price)
         TripEvent.objects.create(trip=trip, event=event)
