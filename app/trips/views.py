@@ -8,6 +8,7 @@ from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer, CarInfoSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer, TripSerializerHistory
 import trips.utils as utils
+from base_app.exceptions import LogicError
 import datetime
 import random
 
@@ -51,16 +52,16 @@ class TripManagement(views.APIView):
             fare = car.category.day_fare
         else:
             rate = TripState.Rate.evening
-            fare = car.category.evening_fare    
+            fare = car.category.evening_fare
 
         return rate, fare
 
     def create_trip(self, user, car, event):
         current_trip = self.get_current_trip(user.id)
         if current_trip:
-            raise ValidationError({'error_message': 'Your trip already exists'})
+            raise LogicError('Your trip already exists', status_code=status.HTTP_400_BAD_REQUEST)
         if car.car_info.status != CarInfo.Status.available:
-            raise ValidationError({'error_message': f'Car is {car.car_info.status}, choose another one'})
+            raise LogicError(f'Car is {car.car_info.status}, choose another one', status_code=status.HTTP_400_BAD_REQUEST)
 
         trip = Trip.objects.create(car=car, user=user)
         rate, fare = self.get_rate(car)
@@ -99,7 +100,7 @@ class TripManagement(views.APIView):
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
 
         if action == TripEvent.Event.booking or current_trip.events.first().event != TripEvent.Event.booking or current_trip.events.count() != 1:
-            raise ValidationError({'error_message': 'Your trip already exists'})
+            raise LogicError('Your trip already exists', status_code=status.HTTP_400_BAD_REQUEST)
 
         event = TripEvent.objects.create(trip=current_trip, event=TripEvent.Event.landing)
         current_trip.events.add(event)
@@ -158,11 +159,11 @@ class TripMaintenance(views.APIView):
         previous_event = trip.events.last()
 
         if event != TripEvent.Event.end_parking and previous_event.event == TripEvent.Event.parking:
-            raise ValidationError({'error_message': f'Event \'{event}\' cannot occur after \'{previous_event.event}\''})
+            raise LogicError(f'Event \'{event}\' cannot occur after \'{previous_event.event}\'', status_code=status.HTTP_400_BAD_REQUEST)
         if event == TripEvent.Event.end_parking and previous_event.event != TripEvent.Event.parking:
-            raise ValidationError({'error_message': f'Event \'{event}\' must occur after \'{TripEvent.Event.parking}\''})
+            raise LogicError(f'Event \'{event}\' must occur after \'{TripEvent.Event.parking}\'', status_code=status.HTTP_400_BAD_REQUEST)
         if event in (TripEvent.Event.fueling, TripEvent.Event.washing) and credentials is None:
-            raise ValidationError({'error_message': f'Credentials must be transferred when \'{event}\''})
+            raise LogicError(f'Credentials must be transferred when \'{event}\'', status_code=status.HTTP_400_BAD_REQUEST)
 
         if credentials:
             trip_event.credentials = credentials
