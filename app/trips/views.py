@@ -7,6 +7,7 @@ from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer, CarInfoSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer, TripSerializerHistory
+import trips.utils as utils
 import datetime
 import random
 
@@ -29,25 +30,23 @@ class TripEventViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser, )
 
 
-def get_car(pk):
-    try:
-        return Car.objects.select_related('car_info').get(pk=pk)
-    except Car.DoesNotExist:
-        raise ValidationError({'error_message': 'car doesn\'t exist'})
-
-
-def get_current_trip(**kwargs):
-    try:
-        return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, **kwargs)
-    except Trip.DoesNotExist:
-        return None
-
-
 class TripManagement(views.APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
+    def get_current_trip(self, user_id):
+        try:
+            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, user=user_id)
+        except Trip.DoesNotExist:
+            return None
+
+    def get_car(self, pk):
+        try:
+            return Car.objects.select_related('car_info').get(pk=pk)
+        except Car.DoesNotExist:
+            raise ValidationError({'error_message': 'car doesn\'t exist'})
+
     def create_trip(self, user, car, event):
-        current_trip = get_current_trip(user=user.id)
+        current_trip = self.get_current_trip(user.id)
         if current_trip:
             raise ValidationError({'error_message': 'Your trip already exists'})
         if car.car_info.status != CarInfo.Status.available:
@@ -70,7 +69,7 @@ class TripManagement(views.APIView):
         return trip
 
     def get(self, request):
-        current_trip = get_current_trip(user=request.user.id)
+        current_trip = self.get_current_trip(request.user.id)
         if current_trip is None:
             return Response({'message': 'You haven\'t got started trips'})
 
@@ -83,16 +82,14 @@ class TripManagement(views.APIView):
         for field in fields:
             if field not in request.data:
                 raise ValidationError({'error_message': f'{field} is required'})
-        car_id = request.data['car_id']
         action = request.data['action']
-        car = get_car(car_id)
 
         if action not in (TripEvent.Event.booking, TripEvent.Event.landing):
             raise ValidationError({'error_message': 'Invalid action'})
 
-        current_trip = get_current_trip(user=request.user.id)
+        current_trip = self.get_current_trip(request.user.id)
         if current_trip is None:
-            trip = self.create_trip(request.user, car, action)
+            trip = self.create_trip(request.user, self.get_car(request.data['car_id']), action)
             trip_ser = TripSerializer(trip)
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
 
@@ -111,6 +108,12 @@ class TripManagement(views.APIView):
 class TripMaintenance(views.APIView):
     permission_classes = (permissions.IsAdminUser, )
 
+    def get_current_trip(self, car_id):
+        try:
+            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, car=car_id)
+        except Trip.DoesNotExist:
+            return None
+
     def pay_by_credentials(self, credentials):
         # Some bank operations
         cost = random.randint(1, 5)
@@ -123,7 +126,7 @@ class TripMaintenance(views.APIView):
             if field not in request.data:
                 raise ValidationError({'error_message': f'{field} is required'})
 
-        trip = get_current_trip(car=request.data['car'])
+        trip = self.get_current_trip(request.data['car'])
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
 
@@ -177,25 +180,20 @@ class TripsHistory(generics.ListAPIView):
             .filter(user=self.request.user.id).order_by('-id')
 
 
-def get_total_cost(trip):
-    total_cost = 0
-    total_cost += trip.total_cost
-    if trip.reservation_time:
-        total_cost += trip.reservation_time * trip.state.reservation_price
-    current_time = timezone.now()
-    total_cost += (current_time - trip.start_date).total_seconds() / 3600 * trip.state.fare
-
-    return total_cost, current_time
-
-
 class TripCost(views.APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
+    def get_current_trip(self, user_id):
+        try:
+            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, user=user_id)
+        except Trip.DoesNotExist:
+            return None
+
     def get(self, request):
-        trip = get_current_trip(user=request.user.id)
+        trip = self.get_current_trip(request.user.id)
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
-        total_cost, _ = get_total_cost(trip)
+        total_cost, _ = utils.get_total_cost(trip)
         trip_ser = TripSerializer(trip)
 
         return Response({'total_cost': total_cost, 'trip': trip_ser.data})
@@ -204,6 +202,12 @@ class TripCost(views.APIView):
 class TripEnd(views.APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
+    def get_current_trip(self, user_id):
+        try:
+            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, user=user_id)
+        except Trip.DoesNotExist:
+            return None
+
     def pay_for_trip(self, total_cost):
         # Pay for the trip using users bank card props?
         bank_check = 'some info'
@@ -211,10 +215,10 @@ class TripEnd(views.APIView):
 
     @transaction.atomic
     def post(self, request):
-        trip = get_current_trip(user=request.user.id)
+        trip = self.get_current_trip(request.user.id)
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
-        total_cost, end_date = get_total_cost(trip)
+        total_cost, end_date = utils.get_total_cost(trip)
 
         event = TripEvent.objects.create(trip=trip, event=TripEvent.Event.end, timestamp=end_date)
         trip.events.add(event)
