@@ -85,7 +85,7 @@ class UsersManagersTests(TestCase):
                                                        'date_of_birth': '2000-01-01', 'password': 'hello_world'})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_put(self):
+    def test_update(self):
         User = get_user_model()
         superuser = User.objects.create_superuser(email='super@user.com', name='test', date_of_birth='2002-12-12',
                                                   password='hello_world')
@@ -100,14 +100,12 @@ class UsersManagersTests(TestCase):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
 
-        response = client.put(reverse('user_detail', kwargs={'pk': user.pk}), data={'email': 'changed@user.com', 'name': 'changed',
-                                                                                    'date_of_birth': '1990-10-10', 'password': 'testing321'})
+        response = client.put(reverse('update_user', kwargs={'pk': user.pk}), data={'email': 'changed@user.com', 'name': 'changed'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         user = User.objects.get(pk=user.pk)
         self.assertEqual(user.email, 'changed@user.com')
         self.assertEqual(user.name, 'changed')
-        self.assertEqual(user.date_of_birth.strftime('%Y-%m-%d'), '1990-10-10')
 
     def test_delete(self):
         User = get_user_model()

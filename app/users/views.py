@@ -19,7 +19,7 @@ class UserList(generics.ListCreateAPIView):
             return tuple()
 
 
-class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+class UserDetail(generics.RetrieveDestroyAPIView):
     queryset = UserAccount.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdminOrOwner, )
@@ -28,16 +28,6 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
         if self.kwargs['pk'] == 'me':
             self.kwargs['pk'] = request.user.pk
         return self.retrieve(request, *args, **kwargs)
-
-    def put(self, request, *args, **kwargs):
-        if self.kwargs['pk'] == 'me':
-            self.kwargs['pk'] = request.user.pk
-        return self.update(request, *args, **kwargs)
-
-    def patch(self, request, *args, **kwargs):
-        if self.kwargs['pk'] == 'me':
-            self.kwargs['pk'] = request.user.pk
-        return self.partial_update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         if self.kwargs['pk'] == 'me':
