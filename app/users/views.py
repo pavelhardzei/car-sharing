@@ -57,7 +57,7 @@ class ChangePassword(generics.UpdateAPIView):
         return self.update(request, *args, **kwargs)
 
     def patch(self, request, *args, **kwargs):
-        raise LogicError(f'Method \"PATCH\" not allowed', status_code=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'detail': f'Method \"PATCH\" not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class AuthToken(ObtainAuthToken):
