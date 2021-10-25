@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.authtoken.views import Token
 from .models import UserAccount
+from datetime import datetime
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -16,6 +17,11 @@ class UserSerializer(serializers.ModelSerializer):
                 'write_only': True
             }
         }
+
+    def validate_date_of_birth(self, value):
+        if (datetime.now() - datetime.strptime(str(value), '%Y-%m-%d')).days // 365 < 18:
+            raise ValidationError({'error_message': 'Age must be >= 18'})
+        return value
 
     def create(self, validated_data):
         user = UserAccount(**validated_data)

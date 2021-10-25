@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from datetime import datetime
 
 
 class CustomUserManager(BaseUserManager):
@@ -50,17 +49,6 @@ class UserAccount(AbstractBaseUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('name', 'date_of_birth')
-
-    def save(self, *args, **kwargs):
-        values = (self.email, self.name, self.date_of_birth)
-        field_value_map = dict(zip((self.USERNAME_FIELD, ) + self.REQUIRED_FIELDS, values))
-        for field_name, value in field_value_map.items():
-            if not value:
-                raise ValidationError({'error_message': f'The {field_name} value must be set'})
-
-        if (datetime.now() - datetime.strptime(self.date_of_birth.__str__(), '%Y-%m-%d')).days // 365 < 18:
-            raise ValidationError({'error_message': 'Age must be >= 18'})
-        super().save(*args, **kwargs)
 
     def get_full_name(self):
         return self.name
