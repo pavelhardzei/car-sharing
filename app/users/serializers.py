@@ -13,8 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             'password': {
-                'write_only': True,
-                'required': True
+                'write_only': True
             }
         }
 
@@ -25,13 +24,31 @@ class UserSerializer(serializers.ModelSerializer):
         Token.objects.create(user=user)
         return user
 
+
+class PasswordSerializer(serializers.ModelSerializer):
+    old_password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    password_rep = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = UserAccount
+        fields = ('old_password', 'password', 'password_rep')
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_rep']:
+            raise ValidationError({'message_error': 'Passwords did not match'})
+        return attrs
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise ValidationError({'message_error': 'Old password is not correct'})
+        return value
+
     def update(self, instance, validated_data):
-        password = validated_data.pop('password')
-        user = super(UserSerializer, self).update(instance, validated_data)
-        if password:
-            user.set_password(password)
-        user.save()
-        return user
+        instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
 
 
 class TokenSerializer(serializers.Serializer):

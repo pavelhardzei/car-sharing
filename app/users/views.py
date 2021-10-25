@@ -1,11 +1,11 @@
 from .models import UserAccount
-from .serializers import UserSerializer, TokenSerializer
-from rest_framework import generics
-from rest_framework import permissions
+from .serializers import UserSerializer, TokenSerializer, PasswordSerializer
+from rest_framework import generics, permissions, status
 from .permissions import IsAdminOrOwner
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from base_app.exceptions import LogicError
 
 
 class UserList(generics.ListCreateAPIView):
@@ -44,6 +44,20 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
         if self.kwargs['pk'] == 'me':
             self.kwargs['pk'] = request.user.pk
         return self.destroy(request, *args, **kwargs)
+
+
+class ChangePassword(generics.UpdateAPIView):
+    queryset = UserAccount.objects.all()
+    serializer_class = PasswordSerializer
+    permission_classes = (IsAdminOrOwner, )
+
+    def put(self, request, *args, **kwargs):
+        if self.kwargs['pk'] == 'me':
+            self.kwargs['pk'] = request.user.pk
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        raise LogicError(f'Method \"PATCH\" not allowed', status_code=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class AuthToken(ObtainAuthToken):
