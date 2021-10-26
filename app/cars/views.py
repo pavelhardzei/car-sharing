@@ -44,6 +44,7 @@ class AvailableCars(generics.ListAPIView):
         distances = utils.count_distances(loc, available_cars)
 
         cars_ser = CarSerializer(available_cars, many=True)
-        cars_dist = [(car, {'dist_to': dist}) for car, dist in zip(cars_ser.data, distances)]
+        for car, dist in zip(cars_ser.data, distances):
+            car.update({'dist_to': dist})
 
-        return Response({'your_location': loc, 'available_cars': cars_dist})
+        return Response({'your_location': loc, 'available_cars': cars_ser.data})
