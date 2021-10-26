@@ -8,6 +8,7 @@ from cars.serializers import CarSerializer, CarInfoSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer, TripSerializerHistory
 from base_app.exceptions import LogicError
 from base_app.mixins import ParseRequestMixin
+from base_app.shortcuts import get_object_or_404_with_message
 import datetime
 import random
 
@@ -30,20 +31,20 @@ class TripEventViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser, )
 
 
-class TripManagement(views.APIView, ParseRequestMixin):
+class TripBaseView:
+    def get_current_trip(self, **kwargs):
+        return get_object_or_404_with_message(Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events'),
+                                              'Trip does not exist', end_date=None, **kwargs)
+
+    def trip_exists(self, **kwargs):
+        return Trip.objects.filter(end_date=None, **kwargs).exists()
+
+
+class TripManagement(views.APIView, ParseRequestMixin, TripBaseView):
     permission_classes = (permissions.IsAuthenticated, )
 
-    def get_current_trip(self, user_id):
-        try:
-            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, user=user_id)
-        except Trip.DoesNotExist:
-            return None
-
     def get_car(self, pk):
-        try:
-            return Car.objects.select_related('car_info').get(pk=pk)
-        except Car.DoesNotExist:
-            raise ValidationError({'error_message': 'car doesn\'t exist'})
+        return get_object_or_404_with_message(Car.objects.select_related('car_info'), 'Car does not exist', pk=pk)
 
     def get_rate(self, car):
         if 4 <= datetime.datetime.now().hour < 18:
@@ -56,8 +57,7 @@ class TripManagement(views.APIView, ParseRequestMixin):
         return rate, fare
 
     def create_trip(self, user, car, event):
-        current_trip = self.get_current_trip(user.id)
-        if current_trip:
+        if self.trip_exists(user=user.id):
             raise LogicError('Your trip already exists', status_code=status.HTTP_400_BAD_REQUEST)
         if car.car_info.status != CarInfo.Status.available:
             raise LogicError(f'Car is {car.car_info.status}, choose another one', status_code=status.HTTP_400_BAD_REQUEST)
@@ -74,10 +74,7 @@ class TripManagement(views.APIView, ParseRequestMixin):
         return trip
 
     def get(self, request):
-        current_trip = self.get_current_trip(request.user.id)
-        if current_trip is None:
-            return Response({'message': 'You haven\'t got started trips'})
-
+        current_trip = self.get_current_trip(user=request.user.id)
         trip_ser = TripSerializer(current_trip)
         return Response(trip_ser.data)
 
@@ -89,12 +86,12 @@ class TripManagement(views.APIView, ParseRequestMixin):
         if action not in (TripEvent.Event.booking, TripEvent.Event.landing):
             raise ValidationError({'error_message': 'Invalid action'})
 
-        current_trip = self.get_current_trip(request.user.id)
-        if current_trip is None:
+        if not self.trip_exists(user=request.user.id):
             trip = self.create_trip(request.user, self.get_car(params['car_id']), action)
             trip_ser = TripSerializer(trip)
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
 
+        current_trip = self.get_current_trip(user=request.user.id)
         if action == TripEvent.Event.booking or current_trip.events.first().event != TripEvent.Event.booking or current_trip.events.count() != 1:
             raise LogicError('Your trip already exists', status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -107,14 +104,8 @@ class TripManagement(views.APIView, ParseRequestMixin):
         return Response(trip_ser.data)
 
 
-class TripMaintenance(views.APIView, ParseRequestMixin):
+class TripMaintenance(views.APIView, ParseRequestMixin, TripBaseView):
     permission_classes = (permissions.IsAdminUser, )
-
-    def get_current_trip(self, car_id):
-        try:
-            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, car=car_id)
-        except Trip.DoesNotExist:
-            return None
 
     def pay_by_credentials(self, credentials):
         # Some bank operations
@@ -125,9 +116,7 @@ class TripMaintenance(views.APIView, ParseRequestMixin):
     def post(self, request):
         params = self.parse(request, ('car', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude', 'total_distance'))
 
-        trip = self.get_current_trip(params['car'])
-        if trip is None:
-            return Response({'message': 'Current trip doesn\'t exist'})
+        trip = self.get_current_trip(car=params['car'])
 
         car = trip.car
         event = params['event']
@@ -179,33 +168,19 @@ class TripsHistory(generics.ListAPIView):
             .filter(user=self.request.user.id).order_by('-id')
 
 
-class TripCost(views.APIView):
+class TripCost(views.APIView, TripBaseView):
     permission_classes = (permissions.IsAuthenticated, )
 
-    def get_current_trip(self, user_id):
-        try:
-            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, user=user_id)
-        except Trip.DoesNotExist:
-            return None
-
     def get(self, request):
-        trip = self.get_current_trip(request.user.id)
-        if trip is None:
-            return Response({'message': 'Current trip doesn\'t exist'})
+        trip = self.get_current_trip(user=request.user.id)
         total_cost, _ = trip.get_total_cost()
         trip_ser = TripSerializer(trip)
 
         return Response({'total_cost': total_cost, 'trip': trip_ser.data})
 
 
-class TripEnd(views.APIView):
+class TripEnd(views.APIView, TripBaseView):
     permission_classes = (permissions.IsAuthenticated, )
-
-    def get_current_trip(self, user_id):
-        try:
-            return Trip.objects.select_related('state', 'car', 'car__car_info').prefetch_related('events').get(end_date=None, user=user_id)
-        except Trip.DoesNotExist:
-            return None
 
     def pay_for_trip(self, total_cost):
         # Pay for the trip using users bank card props?
@@ -214,9 +189,7 @@ class TripEnd(views.APIView):
 
     @transaction.atomic
     def post(self, request):
-        trip = self.get_current_trip(request.user.id)
-        if trip is None:
-            return Response({'message': 'Current trip doesn\'t exist'})
+        trip = self.get_current_trip(user=request.user.id)
         total_cost, end_date = trip.get_total_cost()
 
         event = TripEvent.objects.create(trip=trip, event=TripEvent.Event.end, timestamp=end_date)
