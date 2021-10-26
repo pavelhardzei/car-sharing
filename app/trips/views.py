@@ -1,13 +1,13 @@
 from rest_framework import permissions, viewsets, views, status, generics
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from django.utils import timezone
 from django.db import transaction
 from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer, CarInfoSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer, TripSerializerHistory
 from base_app.exceptions import LogicError
+from .mixins import ParseRequestMixin
 import datetime
 import random
 
@@ -30,7 +30,7 @@ class TripEventViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser, )
 
 
-class TripManagement(views.APIView):
+class TripManagement(views.APIView, ParseRequestMixin):
     permission_classes = (permissions.IsAuthenticated, )
 
     def get_current_trip(self, user_id):
@@ -83,18 +83,15 @@ class TripManagement(views.APIView):
 
     @transaction.atomic
     def post(self, request):
-        fields = ('car_id', 'action')
-        for field in fields:
-            if field not in request.data:
-                raise ValidationError({'error_message': f'{field} is required'})
-        action = request.data['action']
+        params = self.parse(request, ('car_id', 'action'))
+        action = params['action']
 
         if action not in (TripEvent.Event.booking, TripEvent.Event.landing):
             raise ValidationError({'error_message': 'Invalid action'})
 
         current_trip = self.get_current_trip(request.user.id)
         if current_trip is None:
-            trip = self.create_trip(request.user, self.get_car(request.data['car_id']), action)
+            trip = self.create_trip(request.user, self.get_car(params['car_id']), action)
             trip_ser = TripSerializer(trip)
             return Response(trip_ser.data, status=status.HTTP_201_CREATED)
 
@@ -110,7 +107,7 @@ class TripManagement(views.APIView):
         return Response(trip_ser.data)
 
 
-class TripMaintenance(views.APIView):
+class TripMaintenance(views.APIView, ParseRequestMixin):
     permission_classes = (permissions.IsAdminUser, )
 
     def get_current_trip(self, car_id):
@@ -126,20 +123,17 @@ class TripMaintenance(views.APIView):
 
     @transaction.atomic
     def post(self, request):
-        fields = ('car', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude', 'total_distance')
-        for field in fields:
-            if field not in request.data:
-                raise ValidationError({'error_message': f'{field} is required'})
+        params = self.parse(request, ('car', 'event', 'credentials', 'petrol_level', 'longitude', 'latitude', 'total_distance'))
 
-        trip = self.get_current_trip(request.data['car'])
+        trip = self.get_current_trip(params['car'])
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
 
         car = trip.car
-        event = request.data['event']
-        credentials = request.data['credentials']
+        event = params['event']
+        credentials = params['credentials']
 
-        filtered = {k: v for k, v in request.data.items() if v}
+        filtered = {k: v for k, v in params.items() if v}
 
         car_info_ser = CarInfoSerializer(car.car_info, data=filtered, partial=True)
         car_info_ser.is_valid(raise_exception=True)
