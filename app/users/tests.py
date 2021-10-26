@@ -18,13 +18,13 @@ class UsersManagersTests(TestCase):
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(Exception):
             User.objects.create_user()
         with self.assertRaises(IntegrityError):
             User.objects.create_user(email='normal@user.com', name='test', date_of_birth='2002-12-12')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Exception):
             User.objects.create_user(email='', name='', date_of_birth='')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Exception):
             User.objects.create_user(email='normal2@user.com', name='test', date_of_birth='2012-12-12')
 
     def test_create_superuser(self):
@@ -35,7 +35,7 @@ class UsersManagersTests(TestCase):
         self.assertTrue(admin_user.is_staff)
         self.assertTrue(admin_user.is_superuser)
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Exception):
             User.objects.create_superuser(email='super2@user.com', name='test2', date_of_birth='2000-12-12',
                                           is_superuser=False)
 

@@ -10,4 +10,4 @@ class ErrorHandler:
         return self._get_response(request)
 
     def process_exception(self, request, exception):
-        return JsonResponse({'success': False, 'error_message': str(exception)}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'error_message': str(exception)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

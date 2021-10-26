@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from .models import Category, Car, CarInfo
 import datetime
 
@@ -10,22 +11,22 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def validate_day_fare(self, value):
         if value <= 0:
-            raise Exception('Day fare must be positive')
+            raise ValidationError({'error_message': 'Day fare must be positive'})
         return value
 
     def validate_evening_fare(self, value):
         if value <= 0:
-            raise Exception('Evening fare must be positive')
+            raise ValidationError({'error_message': 'Evening fare must be positive'})
         return value
 
     def validate_reservation_price(self, value):
         if value <= 0:
-            raise Exception('Reservation price must be positive')
+            raise ValidationError({'error_message': 'Reservation price must be positive'})
         return value
 
     def validate_parking_price(self, value):
         if value < 0:
-            raise Exception('Parking price cannot be negative')
+            raise ValidationError({'error_message': 'Parking price cannot be negative'})
         return value
 
 
@@ -42,26 +43,24 @@ class CarInfoSerializer(serializers.ModelSerializer):
 
     def validate_petrol_level(self, value):
         if value < 0 or value > 100:
-            raise Exception('Petrol level must be in range(0, 100)')
+            raise ValidationError({'error_message': 'Petrol level must be in range(0, 100)'})
         return value
 
     def validate_longitude(self, value):
         if value < -180 or value > 180:
-            raise Exception('Longitude must be in range(-180, 180)')
+            raise ValidationError({'error_message': 'Longitude must be in range(-180, 180)'})
         return value
 
     def validate_latitude(self, value):
         if value < -90 or value > 90:
-            raise Exception('Latitude must be in range(-90, 90)')
+            raise ValidationError({'error_message': 'Latitude must be in range(-90, 90)'})
         return value
 
 
-class CarSerializer(serializers.ModelSerializer):
-    car_info = CarInfoSerializer(read_only=True)
-
+class CarSerializerHistory(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = ('id', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category', 'car_info')
+        fields = ('id', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category')
 
     def get_fields(self, *args, **kwargs):
         fields = super().get_fields()
@@ -72,15 +71,23 @@ class CarSerializer(serializers.ModelSerializer):
 
     def validate_year(self, value):
         if value < 1886 or value > datetime.date.today().year:
-            raise Exception('Invalid creation year')
+            raise ValidationError({'error_message': 'Invalid creation year'})
         return value
 
     def validate_weight(self, value):
         if value <= 0:
-            raise Exception('Weight must be positive')
+            raise ValidationError({'error_message': 'Weight must be positive'})
         return value
 
     def validate_mileage(self, value):
         if value < 0:
-            raise Exception('Mileage cannot be negative')
+            raise ValidationError({'error_message': 'Mileage cannot be negative'})
         return value
+
+
+class CarSerializer(CarSerializerHistory):
+    car_info = CarInfoSerializer(read_only=True)
+
+    class Meta:
+        model = Car
+        fields = ('id', 'car_info', 'brand', 'register_number', 'color', 'year', 'weight', 'mileage', 'category')
