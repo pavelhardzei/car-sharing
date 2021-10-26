@@ -3,7 +3,7 @@ from decimal import Decimal
 
 
 def count_distances(user_loc, available_cars):
-    loc_rad = user_loc[0] * Decimal(math.pi) / 180, user_loc[1] * Decimal(math.pi) / 180
+    loc_rad = Decimal(user_loc[0]) * Decimal(math.pi) / 180, Decimal(user_loc[1]) * Decimal(math.pi) / 180
     cars_locs_rad = [(car.car_info.longitude * Decimal(math.pi) / 180,
                       car.car_info.latitude * Decimal(math.pi) / 180) for car in available_cars]
 
@@ -13,3 +13,8 @@ def count_distances(user_loc, available_cars):
                  for car_loc in cars_locs_rad]
 
     return distances
+
+
+def filter_distances(cars, radius):
+    radius = Decimal(radius) / 1000
+    return [car for car in cars if car['dist_to'] <= radius]
