@@ -7,7 +7,6 @@ from .models import Trip, TripState, TripEvent
 from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer, CarInfoSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer, TripSerializerHistory
-import trips.utils as utils
 from base_app.exceptions import LogicError
 import datetime
 import random
@@ -199,7 +198,7 @@ class TripCost(views.APIView):
         trip = self.get_current_trip(request.user.id)
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
-        total_cost, _ = utils.get_total_cost(trip)
+        total_cost, _ = trip.get_total_cost()
         trip_ser = TripSerializer(trip)
 
         return Response({'total_cost': total_cost, 'trip': trip_ser.data})
@@ -224,7 +223,7 @@ class TripEnd(views.APIView):
         trip = self.get_current_trip(request.user.id)
         if trip is None:
             return Response({'message': 'Current trip doesn\'t exist'})
-        total_cost, end_date = utils.get_total_cost(trip)
+        total_cost, end_date = trip.get_total_cost()
 
         event = TripEvent.objects.create(trip=trip, event=TripEvent.Event.end, timestamp=end_date)
         trip.events.add(event)
