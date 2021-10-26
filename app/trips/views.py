@@ -7,7 +7,7 @@ from cars.models import Car, CarInfo
 from cars.serializers import CarSerializer, CarInfoSerializer
 from .serializers import TripSerializer, TripStateSerializer, TripEventSerializer, TripSerializerHistory
 from base_app.exceptions import LogicError
-from .mixins import ParseRequestMixin
+from base_app.mixins import ParseRequestMixin
 import datetime
 import random
 
