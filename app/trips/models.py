@@ -16,6 +16,18 @@ class Trip(models.Model):
     class Meta:
         ordering = ('id', )
 
+    def get_total_cost(self):
+        total_cost = 0
+        total_cost += self.total_cost
+        state = self.state
+
+        if self.reservation_time:
+            total_cost += self.reservation_time * state.reservation_price
+        current_time = timezone.now()
+        total_cost += (current_time - self.start_date).total_seconds() / 3600 * state.fare
+
+        return total_cost, current_time
+
     def __str__(self):
         return f'id:{self.id}, car:{self.car}, user:{self.user}'
 
