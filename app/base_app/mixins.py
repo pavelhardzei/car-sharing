@@ -1,12 +1,22 @@
 from rest_framework.exceptions import ValidationError
 
 
-class QueryParamsMixin:
-    def query_params(self, request, keys):
+class BaseMixin:
+    def action(self, request_dict, iter_items):
         params = {}
-        for key in keys:
-            if key not in request.query_params:
-                raise ValidationError({'error_message': f'{key} is required'})
-            params[key] = request.query_params[key]
+        for item in iter_items:
+            if item not in request_dict:
+                raise ValidationError({'error_message': f'{item} is required'})
+            params[item] = request_dict[item]
 
         return params
+
+
+class QueryParamsMixin(BaseMixin):
+    def query_params(self, request, keys):
+        return self.action(request.query_params, keys)
+
+
+class ParseRequestMixin(BaseMixin):
+    def parse(self, request, fields):
+        return self.action(request.data, fields)

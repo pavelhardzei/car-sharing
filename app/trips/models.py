@@ -7,7 +7,7 @@ from cars.models import Car
 class Trip(models.Model):
     car = models.ForeignKey(Car, blank=True, null=True, default=None, on_delete=models.CASCADE, related_name='trips')
     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='trips')
-    total_cost = models.FloatField(blank=True, null=True, default=None)
+    total_cost = models.FloatField(default=0)
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(blank=True, null=True, default=None)
     total_distance = models.IntegerField(blank=True, null=True, default=None)
@@ -15,6 +15,18 @@ class Trip(models.Model):
     
     class Meta:
         ordering = ('id', )
+
+    def get_total_cost(self):
+        total_cost = 0
+        total_cost += self.total_cost
+        state = self.state
+
+        if self.reservation_time:
+            total_cost += self.reservation_time * state.reservation_price
+        current_time = timezone.now()
+        total_cost += (current_time - self.start_date).total_seconds() / 3600 * state.fare
+
+        return total_cost, current_time
 
     def __str__(self):
         return f'id:{self.id}, car:{self.car}, user:{self.user}'
