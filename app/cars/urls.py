@@ -8,5 +8,6 @@ router.register('list', views.CarViewSet, basename='cars')
 router.register('carinfo', views.CarInfoViewSet)
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('', include(router.urls)),
+    path('available/', views.AvailableCars.as_view(), name='available_cars')
 ]
