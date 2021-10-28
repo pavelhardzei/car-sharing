@@ -28,7 +28,6 @@ services:
     entrypoint: ./entrypoint.sh
     depends_on:
       - db
-      - redis
   celery:
     extends:
       file: docker-compose.yml
