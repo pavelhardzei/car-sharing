@@ -1,7 +1,6 @@
 from .models import UserAccount
-from .serializers import UserSerializer, TokenSerializer
-from rest_framework import generics
-from rest_framework import permissions
+from .serializers import UserSerializer, TokenSerializer, PasswordSerializer, UpdateUserSerializer
+from rest_framework import generics, permissions, status
 from .permissions import IsAdminOrOwner
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -20,7 +19,7 @@ class UserList(generics.ListCreateAPIView):
             return tuple()
 
 
-class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+class UserDetail(generics.RetrieveDestroyAPIView):
     queryset = UserAccount.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdminOrOwner, )
@@ -29,6 +28,17 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
         if self.kwargs['pk'] == 'me':
             self.kwargs['pk'] = request.user.pk
         return self.retrieve(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        if self.kwargs['pk'] == 'me':
+            self.kwargs['pk'] = request.user.pk
+        return self.destroy(request, *args, **kwargs)
+
+
+class UpdateUser(generics.UpdateAPIView):
+    queryset = UserAccount.objects.all()
+    serializer_class = UpdateUserSerializer
+    permission_classes = (IsAdminOrOwner,)
 
     def put(self, request, *args, **kwargs):
         if self.kwargs['pk'] == 'me':
@@ -40,10 +50,12 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
             self.kwargs['pk'] = request.user.pk
         return self.partial_update(request, *args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        if self.kwargs['pk'] == 'me':
-            self.kwargs['pk'] = request.user.pk
-        return self.destroy(request, *args, **kwargs)
+
+class ChangePassword(UpdateUser):
+    serializer_class = PasswordSerializer
+
+    def patch(self, request, *args, **kwargs):
+        return Response({'detail': f'Method \"PATCH\" not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class AuthToken(ObtainAuthToken):
