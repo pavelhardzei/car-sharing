@@ -187,3 +187,4 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'pasha.gordei2014@gmail.com'
 EMAIL_HOST_PASSWORD = 'qdpdcbknomfhjdpv'
+RECIPIENT_LIST = ('pavelgordei11@gmail.com', )
