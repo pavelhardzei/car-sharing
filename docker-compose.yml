@@ -16,4 +16,3 @@ services:
     build: ./app
     volumes:
       - ./app:/code
-
