@@ -1,14 +1,13 @@
 from celery import shared_task
 
+from django.core.mail import send_mail
+from .models import Car, CarInfo
+from .serializers import CarSerializer
+from django.conf import settings
+from collections import OrderedDict
 
 @shared_task
 def periodic_task():
-    from django.core.mail import send_mail
-    from .models import Car, CarInfo
-    from .serializers import CarSerializer
-    from django.conf import settings
-    from collections import OrderedDict
-
     def compose(data):
         def parse(car, res):
             for k, v in car.items():
