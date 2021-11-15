@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import os
 from celery.schedules import crontab
-import cars.periodic_tasks
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -176,7 +175,7 @@ CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 CELERY_BEAT_SCHEDULE = {
     "periodic_task": {
-        "task": "cars.periodic_tasks.periodic_task",
+        "task": "cars.tasks.periodic_task",
         "schedule": crontab(minute="*/1")
     }
 }
