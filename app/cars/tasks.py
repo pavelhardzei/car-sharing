@@ -6,21 +6,32 @@ from .serializers import CarSerializer
 from django.conf import settings
 from collections import OrderedDict
 
+
+def compose(data):
+    msg = []
+    for car in data:
+        indent = ['']
+        stack = [[(k, v) for k, v in car.items()]]
+        while len(stack) != 0:
+            if not isinstance(stack[-1][0][1], OrderedDict):
+                msg.append(f'{"".join(indent)}{stack[-1][0][0]}: {stack[-1][0][1]}')
+                i = -1
+            else:
+                msg.append(f'{"".join(indent)}{stack[-1][0][0]}:')
+                stack.append([(k, v) for k, v in stack[-1][0][1].items()])
+                i = -2
+                indent.append('\t')
+            stack[i].pop(0)
+            if len(stack[i]) == 0:
+                stack.pop(i)
+                indent.pop()
+        msg.append('\n')
+
+    return '\n'.join(msg)
+
+
 @shared_task
 def periodic_task():
-    def compose(data):
-        def parse(car, res):
-            for k, v in car.items():
-                if isinstance(v, OrderedDict):
-                    parse(v, res)
-                else:
-                    res.append(f'{k}: {v}')
-        msg = []
-        for item in data:
-            parse(item, msg)
-            msg.append('\n')
-        return '\n'.join(msg)
-
     cars = Car.objects.select_related('car_info').filter(car_info__status=CarInfo.Status.broken)
     cars_ser = CarSerializer(cars, many=True)
 
